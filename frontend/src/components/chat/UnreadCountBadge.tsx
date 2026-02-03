@@ -1,4 +1,4 @@
-import { Badge } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import React from "react";
 
 const UnreadCountBadge = ({ unreadCount }: { unreadCount: number }) => {

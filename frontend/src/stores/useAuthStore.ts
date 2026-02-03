@@ -49,9 +49,6 @@ export const useAuthStore = create<AuthState>()(
       },
       signIn: async (username, password) => {
         try {
-          get().clearState();
-          set({ loading: true });
-
           const { accessToken } = await authService.signIn(username, password);
           get().setAccessToken(accessToken);
 
