@@ -1,4 +1,4 @@
-import type { Participant } from "@/types/Chat";
+import type { Participant } from "@/types/chat";
 import UserAvatar from "./UserAvatar";
 import { Ellipsis } from "lucide-react";
 

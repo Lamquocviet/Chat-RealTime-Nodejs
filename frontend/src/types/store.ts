@@ -1,5 +1,5 @@
 import type { Message } from "react-hook-form";
-import type { Conversation } from "./Chat";
+import type { Conversation } from "./chat";
 import type { User } from "./user";
 
 export interface AuthState {
@@ -37,11 +37,16 @@ export interface ChatState {
       nextCursor?: string | null; // phan trang
     }
   >;
-  loading: boolean;
+  convoLoading: boolean;
+  messageLoading: boolean;
   activeConversationId: string | null;
 
   reset(): void;
   setActiveConversations: (id: string | null) => void;
 
   fetchConversations: () => Promise<void>;
+  fetchMessages: (conversationId?: string) => Promise<void>;
+
+  sendDirectMessage: (recipientId: string, content: string, imgUrl?: string) => Promise<void>;
+  sendGroupMessage: (conversationId: string, content: string, imgUrl?: string) => Promise<void>;
 }
