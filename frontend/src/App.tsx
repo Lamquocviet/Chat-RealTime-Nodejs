@@ -6,13 +6,26 @@ import SignUpPage from "./pages/SignUpPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useEffect } from "react";
 import { useThemeStore } from "./stores/useThemeStore";
+import { useAuthStore } from "./stores/useAuthStore";
+import { useSocketStore } from "./stores/useSocketStore";
+import { Socket } from "socket.io-client";
 
 function App() {
   const { isDark, setTheme } = useThemeStore();
+  const {accessToken} = useAuthStore();
+  const {connectSocket, disconnectSocket} = useSocketStore();
 
   useEffect(() => {
     setTheme(isDark);
   }, [isDark]);
+
+  useEffect(()=>{
+    if(accessToken)
+    {
+      connectSocket();
+    }
+    return () => disconnectSocket();
+  }, [accessToken])
 
   return (
     <>

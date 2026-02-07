@@ -1,6 +1,7 @@
 import type { Message } from "react-hook-form";
 import type { Conversation } from "./chat";
 import type { User } from "./user";
+import type { Socket } from "socket.io-client";
 
 export interface AuthState {
   accessToken: string | null;
@@ -49,4 +50,10 @@ export interface ChatState {
 
   sendDirectMessage: (recipientId: string, content: string, imgUrl?: string) => Promise<void>;
   sendGroupMessage: (conversationId: string, content: string, imgUrl?: string) => Promise<void>;
+}
+
+export interface SocketState {
+  socket: Socket | null;
+  connectSocket: () => void;
+  disconnectSocket: () => void;
 }

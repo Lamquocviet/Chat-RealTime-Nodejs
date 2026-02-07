@@ -34,6 +34,7 @@
     "react-hook-form": "^7.64.0",
     "react-router": "^7.9.3",
     "scrollbar": "^0.1.12",
+    "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7",
     "tailwind": "^4.0.0",
     "tailwind-merge": "^3.3.1",
