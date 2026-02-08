@@ -50,10 +50,17 @@ export interface ChatState {
 
   sendDirectMessage: (recipientId: string, content: string, imgUrl?: string) => Promise<void>;
   sendGroupMessage: (conversationId: string, content: string, imgUrl?: string) => Promise<void>;
+
+  // add message
+  addMessage: (message: Message) => Promise<void>
+
+  // update message
+    updateConversation: (conversation: Conversation) => void
 }
 
 export interface SocketState {
   socket: Socket | null;
+  onlineUsers: string[];
   connectSocket: () => void;
   disconnectSocket: () => void;
 }

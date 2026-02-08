@@ -1,6 +1,8 @@
 import http from "http";
 import express from "express";
 import {Server} from "socket.io";
+import { socketAuthMiddleware } from "../middlewares/socketMiddleware.js";
+import { getUserConversationsForSocketIO } from "../controllers/conversationController.js";
 
 const app = express();
 
@@ -12,13 +14,26 @@ const io = new Server(server, {
         credentials: true,
     }
 })
+io.use(socketAuthMiddleware)
 
-
+const onlineUsers = new Map();
 io.on("connection", async (socket) =>{
-    console.log(`socket connected: ${socket.id}`);
 
-    socket.on("disconnected", ()=>{
-        console.log(`socket disconected: ${socket.id}`);
+    const user = socket.user;
+    // console.log(`${user.displayName} kết nối socket: ${socket.id}`);
+    onlineUsers.set(user._id, socket.id);
+    io.emit("online-user", Array.from(onlineUsers.keys()));
+
+    const conversationIds = await getUserConversationsForSocketIO(user._id)
+    conversationIds.forEach((id)=>{
+        socket.join(id);
+    })
+    
+    socket.on("disconnect", ()=>{
+
+        onlineUsers.delete(user._id);
+        io.emit("online-user", Array.from(onlineUsers.keys()));
+        console.log(`socket disconnected: ${socket.id}`);
     })
 })
 
