@@ -24,13 +24,22 @@ const MessageItem = ({
   messages && index + 1 < messages.length
     ? messages[index + 1]
     : undefined;
+  // const prev =
+  //   index > 0
+  //     ? messages[index - 1]
+  //     : undefined;
   const isShowTime =
     index === 0 ||
     new Date(message.createdAt).getTime() -
       new Date(prev?.createdAt || 0).getTime() >
       300000; // 5 phút
 
-  const isGroupBreak = isShowTime || message.senderId !== prev?.senderId;
+  //const isGroupBreak = isShowTime || message.senderId !== prev?.senderId;
+  const isGroupBreak = 
+   index === 0 || 
+   message.senderId !== prev?.senderId ||
+   new Date(message.createdAt).getTime() -
+    new Date (prev?.createdAt || 0 ).getTime() > 300000; //5 phút
 
   const participant = selectedConvo.participants.find(
     (p: Participant) => p._id.toString() === message.senderId.toString()
@@ -57,7 +66,7 @@ const MessageItem = ({
             {isGroupBreak && (
               <UserAvatar
                 type="chat"
-                name={participant?.displayName ?? "Moji"}
+                name={participant?.displayName ?? "LQV"}
                 avatarUrl={participant?.avatarUrl ?? undefined}
               />
             )}
@@ -81,7 +90,7 @@ const MessageItem = ({
           </Card>
 
           {/* seen/ delivered */}
-          {/* {message.isOwn && message._id === selectedConvo.lastMessage?._id && (
+          {message.isOwn && message._id === selectedConvo.lastMessage?._id && (
             <Badge
               variant="outline"
               className={cn(
@@ -93,7 +102,7 @@ const MessageItem = ({
             >
               {lastMessageStatus}
             </Badge>
-          )} */}
+          )}
         </div>
       </div>
     </>
