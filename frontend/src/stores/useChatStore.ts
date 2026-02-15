@@ -35,7 +35,7 @@ export const useChatStore = create<ChatState>()(
           set({ convoLoading: false });
         }
       },
-       fetchMessages: async (conversationId) => {
+      fetchMessages: async (conversationId) => {
         const { activeConversationId, messages } = get();
         const { user } = useAuthStore.getState();
 
@@ -54,7 +54,7 @@ export const useChatStore = create<ChatState>()(
         try {
           const { messages: fetched, cursor } = await chatService.fetchMessages(
             convoId,
-            nextCursor
+            nextCursor,
           );
 
           const processed = fetched.map((m) => ({
@@ -64,7 +64,8 @@ export const useChatStore = create<ChatState>()(
 
           set((state) => {
             const prev = state.messages[convoId]?.items ?? [];
-            const merged = prev.length > 0 ? [...processed, ...prev] : processed;
+            const merged =
+              prev.length > 0 ? [...processed, ...prev] : processed;
 
             return {
               messages: {
@@ -90,11 +91,11 @@ export const useChatStore = create<ChatState>()(
             recipientId,
             content,
             imgUrl,
-            activeConversationId || undefined
+            activeConversationId || undefined,
           );
           set((state) => ({
             conversations: state.conversations.map((c) =>
-              c._id === activeConversationId ? { ...c, seenBy: [] } : c
+              c._id === activeConversationId ? { ...c, seenBy: [] } : c,
             ),
           }));
         } catch (error) {
@@ -106,14 +107,14 @@ export const useChatStore = create<ChatState>()(
           await chatService.sendGroupMessage(conversationId, content, imgUrl);
           set((state) => ({
             conversations: state.conversations.map((c) =>
-              c._id === get().activeConversationId ? { ...c, seenBy: [] } : c
+              c._id === get().activeConversationId ? { ...c, seenBy: [] } : c,
             ),
           }));
         } catch (error) {
           console.error("Lỗi xảy ra gửi group message", error);
         }
       },
-        addMessage: async (message) => {
+      addMessage: async (message) => {
         try {
           const { user } = useAuthStore.getState();
           const { fetchMessages } = get();
@@ -149,54 +150,49 @@ export const useChatStore = create<ChatState>()(
           console.error("Lỗi xảy khi ra add message:", error);
         }
       },
-       updateConversation: (conversation) => {
+      updateConversation: (conversation) => {
         set((state) => ({
           conversations: state.conversations.map((c) =>
-            c._id === conversation._id ? { ...c, ...conversation } : c
+            c._id === conversation._id ? { ...c, ...conversation } : c,
           ),
         }));
-       },
-       markAsSeen: async() =>{
-
+      },
+      markAsSeen: async () => {
         try {
-          const {user} = useAuthStore.getState();
-          const {activeConversationId, conversations} = get();
+          const { user } = useAuthStore.getState();
+          const { activeConversationId, conversations } = get();
 
-          if(!activeConversationId || !user) return;        
+          if (!activeConversationId || !user) return;
 
-          const convo = conversations.find((c) => c._id === activeConversationId);
+          const convo = conversations.find(
+            (c) => c._id === activeConversationId,
+          );
 
-          if(!convo)
-            return;
+          if (!convo) return;
 
-          if((convo.unreadCounts?.[user._id] ?? 0) === 0) {
+          if ((convo.unreadCounts?.[user._id] ?? 0) === 0) {
             return;
           }
 
           await chatService.markAsSeen(activeConversationId);
 
           set((state) => ({
-            conversations: state.conversations.map((c) =>(
-              c._id === activeConversationId && c.lastMessage ? {
-                ...c,
-                unreadCounts: {
-                  ...c.unreadCounts,
-                  [user._id]:0
-                }
-              }
-              : c
-
-            ))
-          }))
-
+            conversations: state.conversations.map((c) =>
+              c._id === activeConversationId && c.lastMessage
+                ? {
+                    ...c,
+                    unreadCounts: {
+                      ...c.unreadCounts,
+                      [user._id]: 0,
+                    },
+                  }
+                : c,
+            ),
+          }));
         } catch (error) {
           console.error("Lỗi xảy ra khi gọi markAsSeen trong store", error);
         }
-
-
-
-       }
-      
+      },
     }),
     {
       name: "chat-store",

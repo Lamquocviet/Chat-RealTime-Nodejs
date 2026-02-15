@@ -1,7 +1,7 @@
 import { useChatStore } from '@/stores/useChatStore'
 import ChatWelcomeScreen from './ChatWelcomeScreen';
 import MessageItem from './MessageItem';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const ChatWindowBody = () => {
 
@@ -10,6 +10,7 @@ const ChatWindowBody = () => {
 
   const messages = allMessages[activeConversationId!]?.items ?? [];
   const selectedConvo = conversations.find((c) => c._id == activeConversationId);
+  const messageEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() =>{
     const lastMessage = selectedConvo?.lastMessage;
@@ -21,6 +22,18 @@ const ChatWindowBody = () => {
 
 
   },[selectedConvo])
+
+  //keo xuong duoi khi load convo
+  useLayoutEffect(()=>{
+    
+    if(!messageEndRef.current)
+      return;
+
+    messageEndRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "end"
+    })
+  },[activeConversationId])
 
   
 
@@ -52,8 +65,11 @@ const ChatWindowBody = () => {
             />
           ))
         }
+         <div ref={messageEndRef} ></div>
       </div>
+     
     </div>
+    
   )
 }
 

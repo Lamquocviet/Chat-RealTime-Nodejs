@@ -13,7 +13,7 @@ const ChatWindowLayout = () => {
 
   const selectConvo = conversations.find((c) => c?._id === activeConversationId);
 
-  // Move useEffect before any early returns to follow Rules of Hooks
+  
   useEffect(() =>{
     if(!selectConvo)
       return;
