@@ -1,7 +1,8 @@
 import type { Message } from "react-hook-form";
 import type { Conversation } from "./chat";
-import type { User } from "./user";
+import type { User, Friend, FriendRequest } from "./user";
 import type { Socket } from "socket.io-client";
+
 
 export interface AuthState {
   accessToken: string | null;
@@ -69,6 +70,12 @@ export interface SocketState {
 
 export interface FriendState {
   loading: boolean;
+  receivedList: FriendRequest[];
+  sentList: FriendRequest[];
   searchByUsername: (username: string) => Promise<User | null>;
   addFriend: (to: string, message?: string) => Promise<string>;
+  getAllFriendRequests: () => Promise<void>;
+  acceptRequest: (requestId: string) => Promise<void>;
+  declineRequest: (requestId: string) => Promise<void>;
+
 }

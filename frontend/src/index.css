@@ -154,6 +154,8 @@
     --chat-bubble-received: 240 15% 18%;
     --chat-bubble-received-foreground: 250 100% 90%;
 
+    
+
     /* Status colors */
     --online: 140 100% 60%;
     --away: 45 100% 65%;
@@ -232,9 +234,16 @@
   .chat-bubble-sent {
     @apply bg-primary/80! text-[hsl(var(--chat-bubble-sent-foreground))]! shadow-[var(--shadow-bubble)];
   }
-
+  
   .chat-bubble-received {
     @apply bg-[hsl(var(--chat-bubble-received))] text-[hsl(var(--chat-bubble-received-foreground))] border border-border/50;
+  }
+  /*error-message */
+  .error-message {
+    @apply text-sm text-destructive;
+  }
+  .success-message {
+    @apply text-sm text-emerald-500;
   }
 
   /* Status indicators */

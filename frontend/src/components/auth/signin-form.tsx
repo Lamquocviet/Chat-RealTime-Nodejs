@@ -79,7 +79,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
                 />
                 {errors.username && (
                   <p className="text-destructive text-sm">
-                    {errors.username.message}
+                    {username.message}
                   </p>
                 )}
               </div>

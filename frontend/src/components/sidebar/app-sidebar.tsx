@@ -85,6 +85,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           >
             <AddFriendModal />
           </SidebarGroupAction>
+          <SidebarGroupContent>
+            <DirectMessageList />
+          </SidebarGroupContent>
 
           {/* <SidebarGroupContent>
             {convoLoading ? <ConversationSkeleton /> : <DirectMessageList />}
