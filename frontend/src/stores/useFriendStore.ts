@@ -6,6 +6,7 @@ export const useFriendStore = create<FriendState>((set, get) => ({
   loading: false,
   receivedList: [],
   sentList: [],
+  friends: [],
 
   searchByUsername: async (username) => {
     try {
@@ -76,4 +77,18 @@ export const useFriendStore = create<FriendState>((set, get) => ({
       set({ loading: false });
     }
   },
+  getFriends: async () =>{
+    try {
+      set({loading:true})
+      
+      const friends = await friendService.getFriendList();
+      set({friends: friends})
+    } catch (error) {
+      console.error("Lỗi xảy ra khi load friend", error);
+      set({friends: []});
+    }
+    finally {
+      set({loading: false});
+    }
+  }
 }));

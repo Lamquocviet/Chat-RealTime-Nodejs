@@ -42,6 +42,7 @@ export interface ChatState {
   convoLoading: boolean;
   messageLoading: boolean;
   activeConversationId: string | null;
+  loading: boolean;
 
   reset(): void;
   setActiveConversations: (id: string | null) => void;
@@ -59,6 +60,9 @@ export interface ChatState {
   updateConversation: (conversation: unknown) => void
 
   markAsSeen: () => Promise<void>
+
+  addConvo: (convo: Conversation) => void
+  createConversation: (type: "group" | "direct", name: string, memberIds: string[] ) => Promise<void>
 }
 
 export interface SocketState {
@@ -72,10 +76,12 @@ export interface FriendState {
   loading: boolean;
   receivedList: FriendRequest[];
   sentList: FriendRequest[];
+  friends: Friend[];
   searchByUsername: (username: string) => Promise<User | null>;
   addFriend: (to: string, message?: string) => Promise<string>;
   getAllFriendRequests: () => Promise<void>;
   acceptRequest: (requestId: string) => Promise<void>;
   declineRequest: (requestId: string) => Promise<void>;
+  getFriends: () => Promise<void>;
 
 }

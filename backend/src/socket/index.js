@@ -28,6 +28,10 @@ io.on("connection", async (socket) =>{
     conversationIds.forEach((id)=>{
         socket.join(id);
     })
+
+    socket.join("join-conversation", (conversationId)=>{
+        socket.join(conversationId);
+    })
     
     socket.on("disconnect", ()=>{
 
