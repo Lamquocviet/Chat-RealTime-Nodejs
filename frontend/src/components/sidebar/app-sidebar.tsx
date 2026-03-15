@@ -72,7 +72,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupLabel className="uppercase">
               Nhóm chat
             </SidebarGroupLabel>
-            <NewGroupChatModal />
+            <NewGroupChatModal/>
           </div>
         </SidebarGroup>
 

@@ -11,10 +11,14 @@ const FriendListModal = () => {
 
   const handleAddConversation = async (friendId: string) => {
     await createConversation("direct", "", [friendId]);
+    // const tmp = await createConversation("direct", "", [friendId]);
+    // console.log(tmp);
   };
+
 
   return (
     <DialogContent className="glass max-w-md">
+      {/* header */}
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-xl capitalize">
           <MessageCircleMore className="size-5" />

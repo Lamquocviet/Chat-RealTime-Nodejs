@@ -28,11 +28,13 @@ io.on("connection", async (socket) =>{
     conversationIds.forEach((id)=>{
         socket.join(id);
     })
+    
 
     socket.join("join-conversation", (conversationId)=>{
         socket.join(conversationId);
     })
-    
+    //Gửi event "new-group" đến room có tên = userId
+    socket.join(user._id.toString());
     socket.on("disconnect", ()=>{
 
         onlineUsers.delete(user._id);

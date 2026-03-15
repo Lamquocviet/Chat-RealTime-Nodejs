@@ -120,6 +120,7 @@ const AddFriendModal = () => {
         )}
       </DialogContent>
     </Dialog>
+    
   );
 };
 

@@ -77,7 +77,7 @@ export const createConversation = async (req, res) => {
     }));
 
     const formatted = { ...conversation.toObject(), participants };
-
+    //Khi tạo group chat, server sẽ gửi thông báo realtime tới tất cả thành viên.
     if (type === "group") {
       memberIds.forEach((userId) => {
         io.to(userId).emit("new-group", formatted);
