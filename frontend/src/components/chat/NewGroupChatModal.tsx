@@ -123,7 +123,7 @@ const NewGroupChatModal = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-gradient-chat text-white hover:opacity-90 transition-smooth"
+              className="flex-1 bg-gradient-chat text-white hover:opacity-90 transition-smooth cursor-pointer"
             >
               {loading ? (
                 <span>Đang tạo...</span>
