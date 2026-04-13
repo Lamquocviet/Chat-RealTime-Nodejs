@@ -1,4 +1,4 @@
-# Chat MikCode
+# Message 
 
 Một ứng dụng chat fullstack bao gồm backend REST API và frontend React + Vite.
 
@@ -66,11 +66,7 @@ Một ứng dụng chat fullstack bao gồm backend REST API và frontend React 
 - Frontend sử dụng Vite, TypeScript, Tailwind CSS và các thư viện UI Radix.
 - Nếu muốn chạy môi trường production, sử dụng `npm run build` trong `frontend/` và `npm start` trong `backend/`.
 
-## Mở rộng
 
-- Thêm kiểm tra hợp lệ cho form đăng ký/đăng nhập
-- Nâng cấp chế độ realtime cho nhóm chat
-- Hoàn thiện hệ thống thông báo và cài đặt
 
 ## Liên hệ
 
