@@ -68,6 +68,3 @@ Một ứng dụng chat fullstack bao gồm backend REST API và frontend React 
 
 
 
-## Liên hệ
-
-Dự án này phù hợp để phát triển chức năng chat thời gian thực với hệ thống bạn bè và hồ sơ người dùng.
