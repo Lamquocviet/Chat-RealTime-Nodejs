@@ -4,8 +4,6 @@ import { Tabs, TabsContent, TabsList } from "../ui/tabs";
 import ProfileCard from "./ProfileCard";
 import { useAuthStore } from "@/stores/useAuthStore";
 import PersonalInfoForm from "./PersonalInfoForm";
-// import PreferencesForm from "./PreferencesForm";
-// import PrivacySettings from "./PrivacySettings";
 
 interface ProfileDialogProps {
   open: boolean;
