@@ -1,11 +1,11 @@
 import type { Dispatch, SetStateAction } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Tabs, TabsContent, TabsList } from "../ui/tabs";
 import ProfileCard from "./ProfileCard";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import PersonalInfoForm from "./PersonalInfoForm";
-import PreferencesForm from "./PreferencesForm";
-import PrivacySettings from "./PrivacySettings";
+// import PreferencesForm from "./PreferencesForm";
+// import PrivacySettings from "./PrivacySettings";
 
 interface ProfileDialogProps {
   open: boolean;
