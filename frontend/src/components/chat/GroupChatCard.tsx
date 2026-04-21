@@ -1,14 +1,13 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
-import type { Conversation } from "@/types/Chat";
+import type { Conversation } from "@/types/chat";
 import ChatCard from "./ChatCard";
-
 import UnreadCountBadge from "./UnreadCountBadge";
 import GroupChatAvatar from "./GroupChatAvatar";
 
 const GroupChatCard = ({ convo }: { convo: Conversation }) => {
   const { user } = useAuthStore();
-  const { activeConversationId, setActiveConversations, messages, fetchMessages } =
+  const { activeConversationId, setActiveConversation, messages, fetchMessages } =
     useChatStore();
 
   if (!user) return null;
@@ -16,9 +15,9 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
   const unreadCount = convo.unreadCounts[user._id];
   const name = convo.group?.name ?? "";
   const handleSelectConversation = async (id: string) => {
-    setActiveConversations(id);
+    setActiveConversation(id);
     if (!messages[id]) {
-       await fetchMessages();
+      await fetchMessages();
     }
   };
 
@@ -37,7 +36,10 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
       leftSection={
         <>
           {unreadCount > 0 && <UnreadCountBadge unreadCount={unreadCount} />}
-          <GroupChatAvatar participants={convo.participants} type="chat" />
+          <GroupChatAvatar
+            participants={convo.participants}
+            type="chat"
+          />
         </>
       }
       subtitle={

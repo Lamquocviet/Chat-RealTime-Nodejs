@@ -3,7 +3,6 @@ import ChatCard from "./ChatCard";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import { cn } from "@/lib/utils";
-
 import UserAvatar from "./UserAvatar";
 import StatusBadge from "./StatusBadge";
 import UnreadCountBadge from "./UnreadCountBadge";
@@ -11,7 +10,7 @@ import { useSocketStore } from "@/stores/useSocketStore";
 
 const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
   const { user } = useAuthStore();
-  const { activeConversationId, setActiveConversations, messages, fetchMessages } =
+  const { activeConversationId, setActiveConversation, messages, fetchMessages } =
     useChatStore();
   const { onlineUsers } = useSocketStore();
 
@@ -20,13 +19,13 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
   const otherUser = convo.participants.find((p) => p._id !== user._id);
   if (!otherUser) return null;
 
-  const unreadCount = convo.unreadCounts?.[user._id] ?? 0;
+  const unreadCount = convo.unreadCounts[user._id];
   const lastMessage = convo.lastMessage?.content ?? "";
 
   const handleSelectConversation = async (id: string) => {
-    setActiveConversations(id);
+    setActiveConversation(id);
     if (!messages[id]) {
-        await fetchMessages();
+      await fetchMessages();
     }
   };
 
@@ -50,12 +49,10 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
             avatarUrl={otherUser.avatarUrl ?? undefined}
           />
           <StatusBadge
-            // status="offline"
             status={
               onlineUsers.includes(otherUser?._id ?? "") ? "online" : "offline"
             }
           />
-
           {unreadCount > 0 && <UnreadCountBadge unreadCount={unreadCount} />}
         </>
       }
@@ -63,9 +60,7 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
         <p
           className={cn(
             "text-sm truncate",
-            unreadCount > 0
-              ? "font-medium text-foreground"
-              : "text-muted-foreground",
+            unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground"
           )}
         >
           {lastMessage}

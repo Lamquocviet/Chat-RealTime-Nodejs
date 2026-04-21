@@ -19,27 +19,15 @@ const MessageItem = ({
   selectedConvo,
   lastMessageStatus,
 }: MessageItemProps) => {
-  //const prev = index + 1 < messages.length ? messages[index + 1] : undefined;
-  const prev =
-  messages && index + 1 < messages.length
-    ? messages[index + 1]
-    : undefined;
-  // const prev =
-  //   index > 0
-  //     ? messages[index - 1]
-  //     : undefined;
+  const prev = index + 1 < messages.length ? messages[index + 1] : undefined;
+
   const isShowTime =
     index === 0 ||
     new Date(message.createdAt).getTime() -
       new Date(prev?.createdAt || 0).getTime() >
       300000; // 5 phút
 
-  //const isGroupBreak = isShowTime || message.senderId !== prev?.senderId;
-  const isGroupBreak = 
-   index === 0 || 
-   message.senderId !== prev?.senderId ||
-   new Date(message.createdAt).getTime() -
-    new Date (prev?.createdAt || 0 ).getTime() > 300000; //5 phút
+  const isGroupBreak = isShowTime || message.senderId !== prev?.senderId;
 
   const participant = selectedConvo.participants.find(
     (p: Participant) => p._id.toString() === message.senderId.toString()
@@ -60,13 +48,13 @@ const MessageItem = ({
           message.isOwn ? "justify-end" : "justify-start"
         )}
       >
-        {/* avatalastr */}
+        {/* avatar */}
         {!message.isOwn && (
           <div className="w-8">
             {isGroupBreak && (
               <UserAvatar
                 type="chat"
-                name={participant?.displayName ?? "LQV"}
+                name={participant?.displayName ?? "Moji"}
                 avatarUrl={participant?.avatarUrl ?? undefined}
               />
             )}

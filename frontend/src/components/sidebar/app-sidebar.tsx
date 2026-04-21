@@ -21,15 +21,17 @@ import AddFriendModal from "../chat/AddFriendModal";
 import DirectMessageList from "../chat/DirectMessageList";
 import { useThemeStore } from "@/stores/useThemeStore";
 import { useAuthStore } from "@/stores/useAuthStore";
-// import ConversationSkeleton from "../skeleton/ConversationSkeleton";
+import ConversationSkeleton from "../skeleton/ConversationSkeleton";
 import { useChatStore } from "@/stores/useChatStore";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isDark, toggleTheme } = useThemeStore();
   const { user } = useAuthStore();
+  const { convoLoading } = useChatStore();
+
   return (
     <Sidebar variant="inset" {...props}>
-      {/* header */}
+      {/* Header */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -39,8 +41,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="bg-gradient-primary"
             >
               <a href="#">
-                <div className="flex w-full items-center justify-between">
-                  <h1 className="text-xl font-bold text-white">Moji</h1>
+                <div className="flex w-full items-center px-2 justify-between">
+                  <h1 className="text-xl font-bold text-white">Message</h1>
                   <div className="flex items-center gap-2">
                     <Sun className="size-4 text-white/80" />
                     <Switch
@@ -48,7 +50,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       onCheckedChange={toggleTheme}
                       className="data-[state=checked]:bg-background/80"
                     />
-
                     <Moon className="size-4 text-white/80" />
                   </div>
                 </div>
@@ -57,6 +58,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       {/* Content */}
       <SidebarContent className="beautiful-scrollbar">
         {/* New Chat */}
@@ -70,35 +72,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <div className="flex items-center justify-between">
             <SidebarGroupLabel className="uppercase">
-              Nhóm chat
+              nhóm chat
             </SidebarGroupLabel>
-            <SidebarGroupAction
-            title="Kết Bạn"
-            className="cursor-pointer"
-          ></SidebarGroupAction>
-            <NewGroupChatModal/>
+            <NewGroupChatModal />
           </div>
+
+          <SidebarGroupContent>
+            {convoLoading ? <ConversationSkeleton /> : <GroupChatList />}
+          </SidebarGroupContent>
         </SidebarGroup>
 
-       {/* Dirrect Message */}
+        {/* Dirrect Message */}
         <SidebarGroup>
           <SidebarGroupLabel className="uppercase">bạn bè</SidebarGroupLabel>
-          <SidebarGroupAction
-            title="Kết Bạn"
-            className="cursor-pointer"
-          >
-            <AddFriendModal />  
+          <SidebarGroupAction title="Kết Bạn" className="cursor-pointer">
+            <AddFriendModal />
           </SidebarGroupAction>
-          <SidebarGroupContent>
-            <DirectMessageList />
-          </SidebarGroupContent>
 
-          {/* <SidebarGroupContent>
+          <SidebarGroupContent>
             {convoLoading ? <ConversationSkeleton /> : <DirectMessageList />}
-          </SidebarGroupContent> */}
+          </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
+      {/* Footer */}
       <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
     </Sidebar>
   );

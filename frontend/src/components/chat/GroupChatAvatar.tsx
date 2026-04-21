@@ -6,6 +6,7 @@ interface GroupChatAvatarProps {
   participants: Participant[];
   type: "chat" | "sidebar";
 }
+
 const GroupChatAvatar = ({ participants, type }: GroupChatAvatarProps) => {
   const avatars = [];
   const limit = Math.min(participants.length, 4);
@@ -18,7 +19,7 @@ const GroupChatAvatar = ({ participants, type }: GroupChatAvatarProps) => {
         type={type}
         name={member.displayName}
         avatarUrl={member.avatarUrl ?? undefined}
-      />,
+      />
     );
   }
 

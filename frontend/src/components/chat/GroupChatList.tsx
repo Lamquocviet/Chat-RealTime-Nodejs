@@ -1,17 +1,19 @@
 import { useChatStore } from "@/stores/useChatStore";
-
-import GroupMessageCard from "./GroupChatCard";
 import GroupChatCard from "./GroupChatCard";
 
 const GroupChatList = () => {
   const { conversations } = useChatStore();
-  if (!conversations) return;
-  const groupChats = conversations.filter((convo) => convo.type === "group");
 
+  if (!conversations) return;
+
+  const groupchats = conversations.filter((convo) => convo.type === "group");
   return (
-    <div className="flex-1 overflow-auto-y p-2 space-y-2">
-      {groupChats.map((convo) => (
-        <GroupChatCard convo={convo} />
+    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      {groupchats.map((convo) => (
+        <GroupChatCard
+          convo={convo}
+          key={convo._id}
+        />
       ))}
     </div>
   );

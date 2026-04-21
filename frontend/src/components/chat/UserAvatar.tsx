@@ -1,31 +1,36 @@
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
-interface IUserAvatar {
+interface IUserAvatarProps {
   type: "sidebar" | "chat" | "profile";
   name: string;
   avatarUrl?: string;
   className?: string;
 }
 
-const UserAvatar = ({ type, name, avatarUrl, className }: IUserAvatar) => {
+const UserAvatar = ({ type, name, avatarUrl, className }: IUserAvatarProps) => {
   const bgColor = !avatarUrl ? "bg-blue-500" : "";
 
   if (!name) {
-    name = "Vie";
+    name = "Moji";
+    
   }
+
   return (
     <Avatar
       className={cn(
         className ?? "",
         type === "sidebar" && "size-12 text-base",
         type === "chat" && "size-8 text-sm",
-        type === "profile" && "size-24 text-3xl shadow-md",
+        type === "profile" && "size-24 text-3xl shadow-md"
       )}
     >
-      <AvatarImage src={avatarUrl} alt={name} />
+      <AvatarImage
+        src={avatarUrl}
+        alt={name}
+      />
       <AvatarFallback className={`${bgColor} text-white font-semibold`}>
-        {name.charAt(0).toUpperCase()}
+        {name.charAt(0)}
       </AvatarFallback>
     </Avatar>
   );

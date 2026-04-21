@@ -32,3 +32,32 @@ export const useThemeStore = create<ThemeState>()(
     },
   ),
 );
+
+// export const useThemeStore = create<ThemeState>()(
+//   persist(
+//     (set, get) => ({
+//       isDark: false,
+
+//       toggleTheme: () => {
+//         const newvalue = !get().isDark;
+//         set({ isDark: newvalue });
+//         if (newvalue) {
+//           document.documentElement.classList.add("dark");
+//         } else {
+//           document.documentElement.classList.remove("dark");
+//         }
+//       },
+//       setTheme: (dark: boolean) => {
+//         set({ isDark: dark });
+//         if (dark) {
+//           document.documentElement.classList.add("dark");
+//         } else {
+//           document.documentElement.classList.remove("dark");
+//         }
+//       },
+//     }),
+//     {
+//       name: "theme-storage",
+//     },
+//   ),
+// );

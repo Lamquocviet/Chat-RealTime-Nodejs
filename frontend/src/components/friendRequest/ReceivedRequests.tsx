@@ -17,7 +17,7 @@ const ReceivedRequests = () => {
   const handleAccept = async (requestId: string) => {
     try {
       await acceptRequest(requestId);
-      toast.success("Đã đồng ý kết bạn thành công")
+      toast.success("Đã đồng ý kết bạn thành công");
     } catch (error) {
       console.error(error);
     }
@@ -26,7 +26,7 @@ const ReceivedRequests = () => {
   const handleDecline = async (requestId: string) => {
     try {
       await declineRequest(requestId);
-      toast.error("Đã từ chối kết bạn")
+      toast.info("Đã từ chối kết bạn");
     } catch (error) {
       console.error(error);
     }

@@ -74,12 +74,12 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
                 <Input
                   type="text"
                   id="username"
-                  placeholder="moji"
+                  placeholder="username"
                   {...register("username")}
                 />
                 {errors.username && (
                   <p className="text-destructive text-sm">
-                    {username.message}
+                    {errors.username.message}
                   </p>
                 )}
               </div>

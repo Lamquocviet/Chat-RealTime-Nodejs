@@ -11,6 +11,9 @@ import friendRoute from "./routes/friendRoute.js"
 import messageRoute from "./routes/messageRoute.js"
 import {app, server} from "./socket/index.js"
 import { v2 as cloudinary } from 'cloudinary';
+dotenv.config();
+
+
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -18,7 +21,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-dotenv.config();
+
 
 // const app = express();
 const PORT = process.env.PORT || 5001;

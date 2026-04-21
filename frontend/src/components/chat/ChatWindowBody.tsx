@@ -38,6 +38,7 @@ const ChatWindowBody = () => {
   }, [selectedConvo]);
 
   // kéo xuống dưới khi load convo
+  //chạy ngay khi react cập nhat DOM
   useLayoutEffect(() => {
     if (!messagesEndRef.current) return;
 
@@ -57,11 +58,12 @@ const ChatWindowBody = () => {
   };
 
   const handleScrollSave = () => {
+    //const container = document.getElementById("scrollableDiv");
     const container = containerRef.current;
     if (!container || !activeConversationId) {
       return;
     }
-
+    
     sessionStorage.setItem(
       key,
       JSON.stringify({

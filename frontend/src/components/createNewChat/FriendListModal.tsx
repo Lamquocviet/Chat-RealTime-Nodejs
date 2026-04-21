@@ -1,5 +1,5 @@
 import { useFriendStore } from "@/stores/useFriendStore";
-import { DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { MessageCircleMore, Users } from "lucide-react";
 import { Card } from "../ui/card";
 import UserAvatar from "../chat/UserAvatar";
@@ -11,19 +11,18 @@ const FriendListModal = () => {
 
   const handleAddConversation = async (friendId: string) => {
     await createConversation("direct", "", [friendId]);
-    // const tmp = await createConversation("direct", "", [friendId]);
-    // console.log(tmp);
   };
-
 
   return (
     <DialogContent className="glass max-w-md">
-      {/* header */}
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-xl capitalize">
           <MessageCircleMore className="size-5" />
           bắt đầu hội thoại mới
         </DialogTitle>
+        <DialogDescription>
+          Chọn một bạn bè để bắt đầu cuộc trò chuyện trực tiếp
+        </DialogDescription>
       </DialogHeader>
 
       {/* friends list */}
@@ -33,7 +32,9 @@ const FriendListModal = () => {
         </h1>
 
         <div className="space-y-2 max-h-60 overflow-y-auto">
-          {friends.map((friend) => (
+          {friends
+            .filter((friend) => friend && friend.displayName && friend.displayName.trim() !== "")
+            .map((friend) => (
             <Card
               onClick={() => handleAddConversation(friend._id)}
               key={friend._id}
@@ -44,7 +45,7 @@ const FriendListModal = () => {
                 <div className="relative">
                   <UserAvatar
                     type="sidebar"
-                    name={friend.displayName}
+                    name={friend.displayName || ""}
                     avatarUrl={friend.avatarUrl}
                   />
                 </div>
@@ -52,7 +53,7 @@ const FriendListModal = () => {
                 {/* info */}
                 <div className="flex-1 min-w-0 flex flex-col">
                   <h2 className="font-semibold text-sm truncate">
-                    {friend.displayName}
+                    {friend.displayName || "Người dùng"}
                   </h2>
                   <span className="text-sm text-muted-foreground">
                     @{friend.username}

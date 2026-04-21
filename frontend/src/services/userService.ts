@@ -10,6 +10,6 @@ export const userService = {
       throw new Error(res.data.message);
     }
 
-    return res.data;
+    return res.data; 
   },
 };

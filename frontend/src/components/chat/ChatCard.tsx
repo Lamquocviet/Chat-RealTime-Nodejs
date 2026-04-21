@@ -1,7 +1,5 @@
-import React from "react";
-import { formatOnlineTime } from "@/lib/utils";
-import { Card } from "../ui/card";
-import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { formatOnlineTime, cn } from "@/lib/utils";
 import { MoreHorizontal } from "lucide-react";
 
 interface ChatCardProps {
@@ -21,17 +19,17 @@ const ChatCard = ({
   timestamp,
   isActive,
   onSelect,
+  unreadCount,
   leftSection,
   subtitle,
-  unreadCount,
 }: ChatCardProps) => {
   return (
     <Card
       key={convoId}
       className={cn(
-        "boder-none p-3 cursor-pointer transition-smooth glass hover:bg-muted/30",
+        "border-none p-3 cursor-pointer transition-smooth glass hover:bg-muted/30",
         isActive &&
-          "ring-2 ring-primary/50 bg-gradient-to-tr from-primary-glow/10 to bg-primary-foreground",
+          "ring-2 ring-primary/50 bg-gradient-to-tr from-primary-glow/10 to-primary-foreground"
       )}
       onClick={() => onSelect(convoId)}
     >
@@ -43,7 +41,7 @@ const ChatCard = ({
             <h3
               className={cn(
                 "font-semibold text-sm truncate",
-                unreadCount && unreadCount > 0 && "text-foreground",
+                unreadCount && unreadCount > 0 && "text-foreground"
               )}
             >
               {name}
@@ -55,9 +53,7 @@ const ChatCard = ({
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 flex-1 min-w-0">
-              {subtitle}
-            </div>
+            <div className="flex items-center gap-1 flex-1 min-w-0">{subtitle}</div>
             <MoreHorizontal className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 hover:size-5 transition-smooth" />
           </div>
         </div>

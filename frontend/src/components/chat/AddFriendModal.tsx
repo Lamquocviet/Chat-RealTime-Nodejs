@@ -28,7 +28,6 @@ const AddFriendModal = () => {
   const {
     register,
     handleSubmit,
-    //theo dõi giá trị đang gõ trong input username để hiển thị trong phần tìm kiếm
     watch,
     reset,
     formState: { errors },
@@ -120,7 +119,6 @@ const AddFriendModal = () => {
         )}
       </DialogContent>
     </Dialog>
-    
   );
 };
 

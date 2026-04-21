@@ -63,7 +63,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
                   />
                 </a>
 
-                <h1 className="text-2xl font-bold">Tạo tài khoản Moji</h1>
+                <h1 className="text-2xl font-bold">Tạo tài khoản Message</h1>
                 <p className="text-muted-foreground text-balance">
                   Chào mừng bạn! Hãy đăng ký để bắt đầu!
                 </p>
@@ -85,9 +85,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
                   />
 
                   {errors.lastname && (
-                    <p className="text-destructive text-sm">
-                      {errors.lastname.message}
-                    </p>
+                    <p className="error-message">{errors.lastname.message}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -103,9 +101,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
                     {...register("firstname")}
                   />
                   {errors.firstname && (
-                    <p className="text-destructive text-sm">
-                      {errors.firstname.message}
-                    </p>
+                    <p className="error-message">{errors.firstname.message}</p>
                   )}
                 </div>
               </div>
@@ -121,13 +117,11 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
                 <Input
                   type="text"
                   id="username"
-                  placeholder="moji"
+                  placeholder="username"
                   {...register("username")}
                 />
                 {errors.username && (
-                  <p className="text-destructive text-sm">
-                    {errors.username.message}
-                  </p>
+                  <p className="error-message">{errors.username.message}</p>
                 )}
               </div>
 
@@ -146,7 +140,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
                   {...register("email")}
                 />
                 {errors.email && (
-                  <p className="text-destructive text-sm">{errors.email.message}</p>
+                  <p className="error-message">{errors.email.message}</p>
                 )}
               </div>
 
@@ -164,9 +158,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
                   {...register("password")}
                 />
                 {errors.password && (
-                  <p className="text-destructive text-sm">
-                    {errors.password.message}
-                  </p>
+                  <p className="error-message">{errors.password.message}</p>
                 )}
               </div>
 

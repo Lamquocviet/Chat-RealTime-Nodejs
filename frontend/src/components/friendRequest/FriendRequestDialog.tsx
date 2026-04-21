@@ -7,10 +7,8 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFriendStore } from "@/stores/useFriendStore";
-import SentRequests from "./SentRequest";
-import ReceivedRequests from "./ReceivedRequest";
-
-
+import SentRequests from "./SentRequests";
+import ReceivedRequests from "./ReceivedRequests";
 
 interface FriendRequestDialogProps {
   open: boolean;
@@ -57,7 +55,7 @@ const FriendRequestDialog = ({ open, setOpen }: FriendRequestDialogProps) => {
           </TabsContent>
 
           <TabsContent value="sent">
-            <SentRequests/>
+            <SentRequests />
           </TabsContent>
         </Tabs>
       </DialogContent>
