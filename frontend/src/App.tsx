@@ -18,14 +18,15 @@ function App() {
     setTheme(isDark);
   }, [isDark]);
 
-  useEffect(() => {
-    if (accessToken) {
+ 
+  useEffect(() =>{
+    if(accessToken)
+    {
       connectSocket();
     }
 
     return () => disconnectSocket();
-  }, [accessToken]);
-
+  },[accessToken])
   return (
     <>
       <Toaster richColors />

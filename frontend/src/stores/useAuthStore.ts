@@ -74,6 +74,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ loading: true });
           const user = await authService.fetchMe();
+          console.log("Fetched user:", user); 
 
           set({ user });
         } catch (error) {
