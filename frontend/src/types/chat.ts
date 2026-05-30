@@ -54,3 +54,46 @@ export interface Message {
   createdAt: string;
   isOwn?: boolean;
 }
+
+// ====== CALL TYPES ======
+export interface Call {
+  _id: string;
+  caller: {
+    _id: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
+  receiver: {
+    _id: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
+  type: "audio" | "video";
+  status: "missed" | "accepted" | "rejected" | "ended";
+  startedAt?: string;
+  endedAt?: string;
+  duration?: number; // in seconds
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CallState {
+  callId: string | null;
+  status: "idle" | "calling" | "ringing" | "connected" | "ended";
+  callerId: string | null;
+  receiverId: string | null;
+  callerInfo?: {
+    _id: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
+  receiverInfo?: {
+    _id: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
+  isAudioOn: boolean;
+  isVideoOn: boolean;
+  duration: number; // in seconds
+}
+
