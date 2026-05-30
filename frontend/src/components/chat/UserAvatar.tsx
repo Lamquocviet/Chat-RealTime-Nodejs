@@ -6,9 +6,10 @@ interface IUserAvatarProps {
   name: string;
   avatarUrl?: string;
   className?: string;
+  onClick?: () => void;
 }
 
-const UserAvatar = ({ type, name, avatarUrl, className }: IUserAvatarProps) => {
+const UserAvatar = ({ type, name, avatarUrl, className, onClick }: IUserAvatarProps) => {
   const bgColor = !avatarUrl ? "bg-blue-500" : "";
 
   if (!name) {
@@ -22,8 +23,10 @@ const UserAvatar = ({ type, name, avatarUrl, className }: IUserAvatarProps) => {
         className ?? "",
         type === "sidebar" && "size-12 text-base",
         type === "chat" && "size-8 text-sm",
-        type === "profile" && "size-24 text-3xl shadow-md"
+        type === "profile" && "size-24 text-3xl shadow-md",
+        onClick && "cursor-pointer hover:opacity-80 transition-opacity"
       )}
+      onClick={onClick}
     >
       <AvatarImage
         src={avatarUrl}

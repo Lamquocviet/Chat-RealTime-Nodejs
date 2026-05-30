@@ -19,5 +19,9 @@ export const userService = {
     const res = await api.patch("/users/updateProfile", data);
     console.log(res);
     return res.data;
+  },
+  getUserProfile: async (userId: string) => {
+    const res = await api.get(`/users/${userId}`);
+    return res.data;
   }
 };

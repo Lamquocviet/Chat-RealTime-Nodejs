@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useChatStore } from "@/stores/useChatStore";
 import type { Conversation } from "@/types/chat";
 import { SidebarTrigger } from "../ui/sidebar";
@@ -7,12 +8,14 @@ import UserAvatar from "./UserAvatar";
 import StatusBadge from "./StatusBadge";
 import GroupChatAvatar from "./GroupChatAvatar";
 import { useSocketStore } from "@/stores/useSocketStore";
+import ViewUserProfileDialog from "@/components/profile/ViewUserProfileDialog";
 
 const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
   const { conversations, activeConversationId } = useChatStore();
   const { user } = useAuthStore();
   const { onlineUsers } = useSocketStore();
-  console.log("onlineUser: ", onlineUsers);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   let otherUser;
 
@@ -33,47 +36,65 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     if (!user || !otherUser) return;
   }
 
+  const handleAvatarClick = () => {
+    if (chat?.type === "direct" && otherUser) {
+      setSelectedUserId(otherUser._id);
+      setProfileOpen(true);
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-10 px-4 py-2 flex items-center bg-background">
-      <div className="flex items-center gap-2 w-full">
-        <SidebarTrigger className="-ml-1 text-foreground" />
-        <Separator
-          orientation="vertical"
-          className="mr-2 data-[orientation=vertical]:h-4"
-        />
+    <>
+      <header className="sticky top-0 z-10 px-4 py-2 flex items-center bg-background">
+        <div className="flex items-center gap-2 w-full">
+          <SidebarTrigger className="-ml-1 text-foreground" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
 
-        <div className="p-2 w-full flex items-center gap-3">
-          {/* avatar */}
-          <div className="relative">
-            {chat.type === "direct" ? (
-              <>
-                <UserAvatar
-                  type={"sidebar"}
-                  name={otherUser?.displayName || "Moji"}
-                  avatarUrl={otherUser?.avatarUrl || undefined}
+          <div className="p-2 w-full flex items-center gap-3">
+            {/* avatar */}
+            <div className="relative">
+              {chat.type === "direct" ? (
+                <>
+                  <UserAvatar
+                    type={"sidebar"}
+                    name={otherUser?.displayName || "Moji"}
+                    avatarUrl={otherUser?.avatarUrl || undefined}
+                    onClick={handleAvatarClick}
+                  />
+                  {/* todo: socket io */}
+                  <StatusBadge
+                    status={
+                      onlineUsers.includes(otherUser?._id ?? "") ? "online" : "offline"
+                    }
+                  />
+                </>
+              ) : (
+                <GroupChatAvatar
+                  participants={chat.participants}
+                  type="sidebar"
                 />
-                {/* todo: socket io */}
-                <StatusBadge
-                  status={
-                    onlineUsers.includes(otherUser?._id ?? "") ? "online" : "offline"
-                  }
-                />
-              </>
-            ) : (
-              <GroupChatAvatar
-                participants={chat.participants}
-                type="sidebar"
-              />
-            )}
+              )}
+            </div>
+
+            {/* name */}
+            <h2 className="font-semibold text-foreground">
+              {chat.type === "direct" ? otherUser?.displayName : chat.group?.name}
+            </h2>
           </div>
-
-          {/* name */}
-          <h2 className="font-semibold text-foreground">
-            {chat.type === "direct" ? otherUser?.displayName : chat.group?.name}
-          </h2>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {selectedUserId && (
+        <ViewUserProfileDialog
+          open={profileOpen}
+          setOpen={setProfileOpen}
+          userId={selectedUserId}
+        />
+      )}
+    </>
   );
 };
 

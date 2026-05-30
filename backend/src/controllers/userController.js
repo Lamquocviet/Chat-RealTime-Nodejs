@@ -37,9 +37,6 @@ export const searchUserByUsername = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    console.log("updateProfile called");
-    console.log(req.body);
-
     const userId = req.user._id;
     const { displayName, bio, phone, email } = req.body;
 
@@ -63,6 +60,7 @@ export const updateProfile = async (req, res) => {
       if (existingEmail) {
         return res.status(400).json({ message: "Email đã tồn tại" });
       }
+      updateData.email = email.trim().toLowerCase();
     }
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
@@ -77,6 +75,25 @@ export const updateProfile = async (req, res) => {
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
+export const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select(
+      "_id username displayName email phone bio avatarUrl",
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    console.error("Lỗi khi lấy profile user", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
 export const uploadAvatar = async (req, res) => {
   try {
     const file = req.file;

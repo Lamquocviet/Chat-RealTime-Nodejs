@@ -18,6 +18,7 @@ export const useUserStore = create<UserState>((_set) => ({
         });
 
         useChatStore.getState().fetchConversations();
+        toast.success("Avatar được cập nhật thành công!");
       }
     } catch (error) {
       console.error("Lỗi khi updateAvatarUrl", error);
@@ -35,6 +36,7 @@ export const useUserStore = create<UserState>((_set) => ({
           ...user,
           ...res.user,
         });
+        toast.success("Cập nhật thông tin thành công!");
       }
     } catch (error) {
       console.error("Lỗi khi updateProfile", error);

@@ -5,6 +5,8 @@ import ProfileCard from "./ProfileCard";
 import { useAuthStore } from "@/stores/useAuthStore";
 import PersonalInfoForm from "./PersonalInfoForm";
 import { TabsTrigger } from "@/components/ui/tabs";
+import PreferencesForm from "./PreferencesForm";
+import PrivacySettings from "./PrivacySettings";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -59,13 +61,13 @@ const ProfileDialog = ({ open, setOpen }: ProfileDialogProps) => {
                 <PersonalInfoForm userInfo={user} />
               </TabsContent>
 
-              {/* <TabsContent value="preferences">
+               <TabsContent value="preferences">
                 <PreferencesForm />
               </TabsContent>
 
               <TabsContent value="privacy">
                 <PrivacySettings />
-              </TabsContent> */}
+              </TabsContent> 
             </Tabs>
           </div>
         </div>
