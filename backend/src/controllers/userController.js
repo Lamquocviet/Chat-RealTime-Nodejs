@@ -16,21 +16,67 @@ export const authMe = async (req, res) => {
 
 export const searchUserByUsername = async (req, res) => {
   try {
-    const {username} = req.query;
+    const { username } = req.query;
 
-    if(!username || username.trim() === "") {
-      return res.status(400).json({message: "Phải cung cấp username để tìm kiếm"});
+    if (!username || username.trim() === "") {
+      return res
+        .status(400)
+        .json({ message: "Phải cung cấp username để tìm kiếm" });
     }
 
-    const user = await User.findOne({username}).select("_id username avatarUrl displayName");
+    const user = await User.findOne({ username }).select(
+      "_id username avatarUrl displayName",
+    );
 
-    return res.status(200).json({user});
-
+    return res.status(200).json({ user });
   } catch (error) {
     console.error("Lỗi khi searchUserByUsername", error);
-    return res.status(500).json({message: "Lỗi hệ thống"});
+    return res.status(500).json({ message: "Lỗi hệ thống" });
   }
-}
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    console.log("updateProfile called");
+    console.log(req.body);
+
+    const userId = req.user._id;
+    const { displayName, bio, phone, email } = req.body;
+
+    const updateData = {};
+    console.log("userId:", userId);
+    console.log("updateData:", updateData);
+    if (displayName) {
+      updateData.displayName = displayName.trim();
+    }
+    if (bio) {
+      updateData.bio = bio.trim();
+    }
+    if (phone) {
+      updateData.phone = phone.trim();
+    }
+    if (email) {
+      const existingEmail = await User.findOne({
+        email: email.trim().toLowerCase(),
+        _id: { $ne: userId },
+      });
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email đã tồn tại" });
+      }
+    }
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true,
+    }).select("_id username displayName email phone bio avatarUrl");
+
+    return res.status(200).json({
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Lỗi khi updateProfile", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
 export const uploadAvatar = async (req, res) => {
   try {
     const file = req.file;
@@ -50,7 +96,7 @@ export const uploadAvatar = async (req, res) => {
       },
       {
         new: true,
-      }
+      },
     ).select("avatarUrl");
 
     if (!updatedUser.avatarUrl) {

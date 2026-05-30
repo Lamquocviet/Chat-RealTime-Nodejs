@@ -91,6 +91,11 @@ export interface FriendState {
   getFriends: () => Promise<void>;
 }
 
+export type UpdateProfileData = Partial<
+  Pick<User, "displayName" | "email" | "phone" | "bio">
+>;
+
 export interface UserState {
   updateAvatarUrl: (formData: FormData) => Promise<void>;
+  updateProfile: (data: UpdateProfileData) => Promise<void>;
 }

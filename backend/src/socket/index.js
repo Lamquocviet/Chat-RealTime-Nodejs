@@ -34,7 +34,11 @@ io.on("connection", async (socket) =>{
 
     socket.join("join-conversation", (conversationId)=>{
         socket.join(conversationId);
+            console.log(
+        `${socket.user.displayName} joined room ${conversationId}`
+    );
     })
+
     //Gửi event "new-group" đến room có tên = userId
     socket.join(user._id.toString());
     socket.on("disconnect", ()=>{

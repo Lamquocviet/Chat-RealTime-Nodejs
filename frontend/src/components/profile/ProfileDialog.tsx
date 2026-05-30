@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList } from "../ui/tabs";
 import ProfileCard from "./ProfileCard";
 import { useAuthStore } from "@/stores/useAuthStore";
 import PersonalInfoForm from "./PersonalInfoForm";
+import { TabsTrigger } from "@/components/ui/tabs";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -34,13 +35,13 @@ const ProfileDialog = ({ open, setOpen }: ProfileDialogProps) => {
               className="my-4"
             >
               <TabsList className="grid w-full grid-cols-3 glass-light">
-                {/* <TabsTrigger
+                 <TabsTrigger
                   value="personal"
                   className="data-[state=active]:glass-strong"
                 >
                   Tài Khoản
-                </TabsTrigger> */}
-                {/* <TabsTrigger
+                </TabsTrigger> 
+                 <TabsTrigger
                   value="preferences"
                   className="data-[state=active]:glass-strong"
                 >
@@ -51,7 +52,7 @@ const ProfileDialog = ({ open, setOpen }: ProfileDialogProps) => {
                   className="data-[state=active]:glass-strong"
                 >
                   Bảo Mật
-                </TabsTrigger> */}
+                </TabsTrigger> 
               </TabsList>
 
               <TabsContent value="personal">
