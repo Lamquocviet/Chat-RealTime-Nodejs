@@ -42,7 +42,7 @@ const NewGroupChatModal = () => {
     try {
       e.preventDefault();
       if (invitedUsers.length === 0) {
-        toast.warning("Bạn phải mời ít nhất 1 thành viên vào nhóm");
+        toast("Bạn phải mời ít nhất 1 thành viên vào nhóm");
         return;
       }
 

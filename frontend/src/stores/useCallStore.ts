@@ -69,12 +69,29 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
       console.log("🔵 Bước 2: Lấy camera/microphone");
 
       // STEP 2: Get user media - audio always, video only if video call
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: callType === "video" ? { width: 1280, height: 720 } : false,
-      });
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: callType === "video" ? { width: 1280, height: 720 } : false,
+        });
+      } catch (err) {
+        console.warn("getUserMedia failed for video, falling back to audio if possible:", err);
+        // If video failed, try audio-only as a fallback
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            set((state) => ({
+              callState: { ...state.callState, isVideoOn: false },
+            }));
+            toast("Không thể truy cập camera, chuyển sang cuộc gọi chỉ âm thanh");
+        } catch (err2) {
+          console.error("Không thể truy cập microphone hoặc camera:", err2);
+          throw err2;
+        }
+      }
 
       set({ localStream: stream });
+      console.log("Local stream tracks:", stream.getTracks().map(t=>({kind:t.kind,enabled:t.enabled,id:t.id}))); 
       console.log("✅ Bước 2 OK - Stream:", stream.id);
       console.log("🔵 Bước 3: Tạo RTCPeerConnection");
 
@@ -155,7 +172,7 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
       // STEP 5: Emit initiate event
       socket.emit("video-call:initiate", {
         receiverId,
-        offer,
+        offer: pc.localDescription ? pc.localDescription.toJSON() : offer,
         callId,
         callType,
         callerId: user._id,
@@ -224,6 +241,12 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
 
   acceptCall: async (offer: RTCSessionDescriptionInit) => {
     try {
+      if (!offer) {
+        console.error("acceptCall: missing offer");
+        toast.error("Không có offer để chấp nhận cuộc gọi");
+        get().resetCallState();
+        return;
+      }
       const { socket } = useSocketStore.getState();
       const { callState, localStream } = get();
 
@@ -232,13 +255,23 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
 
       console.log("🔵 Chấp nhận cuộc gọi - CallId:", callState.callId);
 
-      // Get user media if not already available
+      // Get user media if not already available, with video fallback
       let stream = localStream;
       if (!stream) {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: { width: 1280, height: 720 },
-        });
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 1280, height: 720 } });
+        } catch (err) {
+          console.warn("getUserMedia failed for video on accept, falling back to audio:", err);
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            set((state) => ({ callState: { ...state.callState, isVideoOn: false } }));
+            toast("Không thể truy cập camera, chấp nhận cuộc gọi chỉ âm thanh");
+          } catch (err2) {
+            console.error("Không thể truy cập microphone:", err2);
+            throw err2;
+          }
+        }
+
         set({ localStream: stream });
       }
 
@@ -270,6 +303,7 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
       // Handle remote stream
       pc.ontrack = (event) => {
         if (event.streams && event.streams[0]) {
+          console.log("Received remote tracks:", event.streams[0].getTracks().map(t=>({kind:t.kind,enabled:t.enabled,id:t.id}))); 
           set({ remoteStream: event.streams[0] });
         }
       };
@@ -285,10 +319,10 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
         throw new Error("Socket không kết nối");
       }
 
-      // Emit accept event
+      // Emit accept event (send SDP as JSON)
       socket.emit("video-call:accept", {
         callerId: callState.callerId,
-        answer,
+        answer: pc.localDescription ? pc.localDescription.toJSON() : answer,
         callId: callState.callId,
       });
 
@@ -301,9 +335,17 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
       }));
 
       console.log("✅ Chấp nhận cuộc gọi thành công");
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Lỗi khi chấp nhận cuộc gọi:", error);
-      throw error;
+      const msg = error?.message || String(error);
+      toast.error("Lỗi khi chấp nhận cuộc gọi: " + msg);
+      // reset call state to avoid stuck ringing state
+      try {
+        get().resetCallState();
+      } catch (e) {
+        console.error("Error resetting call state:", e);
+      }
+      return;
     }
   },
 

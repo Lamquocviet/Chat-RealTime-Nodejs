@@ -31,9 +31,16 @@ export const initiateCall = async (req, res) => {
         { caller: receiverId, receiver: callerId, status: { $in: ["calling", "accepted"] } },
       ],
     });
-
     if (activeCall) {
-      return res.status(400).json({ message: "Có cuộc gọi đang diễn ra" });
+      // If the active call is stale (older than 2 minutes) mark it as missed and allow new call
+      const twoMinutes = 2 * 60 * 1000;
+      const age = Date.now() - new Date(activeCall.createdAt).getTime();
+      if (age > twoMinutes) {
+        activeCall.status = "missed";
+        await activeCall.save();
+      } else {
+        return res.status(400).json({ message: "Có cuộc gọi đang diễn ra" });
+      }
     }
 
     // Tạo document cuộc gọi với status 'calling'

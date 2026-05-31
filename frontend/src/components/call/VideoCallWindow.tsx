@@ -45,6 +45,12 @@ const VideoCallWindow = ({ isOpen, onClose }: VideoCallWindowProps) => {
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
+      // Attempt to play to satisfy autoplay policies after user interaction
+      remoteVideoRef.current
+        .play()
+        .then(() => console.log("Remote video playing"))
+        .catch((err) => console.warn("Remote video play suppressed:", err));
+      console.log("Remote stream tracks:", remoteStream.getTracks().map(t=>({kind:t.kind,enabled:t.enabled,id:t.id}))); 
     }
   }, [remoteStream]);
 
