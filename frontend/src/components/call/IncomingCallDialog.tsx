@@ -3,82 +3,69 @@ import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/chat/UserAvatar";
 import { Phone, PhoneOff } from "lucide-react";
 import { useCallStore } from "@/stores/useCallStore";
-import { useSocketStore } from "@/stores/useSocketStore";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+/**
+ * IncomingCallDialog hiển thị cho NGƯỜI NHẬN
+ * - Avatar, tên người gọi
+ * - Text "Đang gọi đến..."
+ * - Animation rung/pulse
+ * - Nút chấp nhận (Nghe máy)
+ * - Nút từ chối (PhoneOff)
+ */
 const IncomingCallDialog = () => {
-  const { callState, acceptCall, rejectCall, handleIncomingCall } = useCallStore();
-  const { socket } = useSocketStore();
-  const [offer, setOffer] = useState<RTCSessionDescriptionInit | null>(null);
+  const { callState, acceptCall, rejectCall } = useCallStore();
   const isRinging = callState.status === "ringing";
 
-  // Listen for incoming call
-  useEffect(() => {
-    if (!socket) {
-      console.log("Socket not ready");
-      return;
-    }
-
-    const handleIncoming = (data: any) => {
-      console.log("Incoming call received:", data);
-      setOffer(data.offer);
-      handleIncomingCall(data);
-    };
-
-    socket.on("video-call:incoming", handleIncoming);
-
-    return () => {
-      socket.off("video-call:incoming", handleIncoming);
-    };
-  }, [socket, handleIncomingCall]);
-
   const handleAccept = async () => {
-    if (offer) {
-      try {
-        await acceptCall(offer);
-        toast.success("Cuộc gọi được chấp nhận");
-      } catch (error) {
-        console.error("Lỗi khi chấp nhận cuộc gọi:", error);
-        toast.error("Lỗi khi chấp nhận cuộc gọi");
-      }
+    try {
+      // Offer được lưu trong callState từ socket listener trong useSocketStore
+      await acceptCall(callState.offer as RTCSessionDescriptionInit);
+      toast.success("Cuộc gọi được chấp nhận");
+    } catch (error) {
+      console.error("Lỗi khi chấp nhận cuộc gọi:", error);
+      toast.error("Lỗi khi chấp nhận cuộc gọi");
     }
   };
 
   const handleReject = async () => {
     try {
       await rejectCall();
-      toast.success("Cuộc gọi bị từ chối");
     } catch (error) {
       console.error("Lỗi khi từ chối cuộc gọi:", error);
+      toast.error("Lỗi khi từ chối cuộc gọi");
     }
   };
 
   return (
     <Dialog open={isRinging}>
-      <DialogContent className="sm:max-w-md p-0 bg-linear-to-br from-slate-900 to-slate-800 border-0 rounded-2xl overflow-hidden">
+      <DialogContent className="sm:max-w-md p-0 bg-linear-to-br from-slate-900 to-slate-800 border-0 rounded-3xl overflow-hidden shadow-2xl">
         {/* Animated background */}
-        <div className="absolute inset-0 bg-linear-to-b from-blue-500/10 to-purple-500/10 animate-pulse" />
+        <div className="absolute inset-0 bg-linear-to-b from-green-500/10 to-blue-500/10 animate-pulse" />
 
-        <div className="relative z-10 flex flex-col items-center justify-center py-12 px-6 space-y-8">
-          {/* Avatar */}
+        <div className="relative z-10 flex flex-col items-center justify-center py-16 px-8 space-y-8">
+          {/* Avatar với animation */}
           <div className="relative">
+            {/* Outer pulse rings */}
+            <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-pulse opacity-60" />
+            <div className="absolute inset-0 rounded-full border-4 border-green-400 animate-ping opacity-40" 
+                 style={{ animationDuration: '1.5s' }} />
+
+            {/* Avatar */}
             <UserAvatar
               type="profile"
-              name={callState.callerInfo?.displayName || "User"}
+              name={callState.callerInfo?.displayName || "Người dùng"}
               avatarUrl={callState.callerInfo?.avatarUrl}
-              className="ring-4 ring-blue-500 shadow-xl animate-pulse"
+              className="ring-4 ring-green-500 shadow-2xl w-24 h-24"
             />
-            {/* Ringing animation */}
-            <div className="absolute inset-0 rounded-full border-4 border-blue-400 animate-ping opacity-50" />
           </div>
 
           {/* Caller info */}
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-white">
+          <div className="text-center space-y-3">
+            <h2 className="text-3xl font-bold text-white">
               {callState.callerInfo?.displayName}
             </h2>
-            <p className="text-blue-200 text-sm animate-pulse">
+            <p className="text-green-200 text-base font-medium animate-pulse">
               Đang gọi đến...
             </p>
           </div>
@@ -90,19 +77,25 @@ const IncomingCallDialog = () => {
               onClick={handleReject}
               variant="destructive"
               size="lg"
-              className="rounded-full w-16 h-16 p-0 flex items-center justify-center hover:scale-110 transition-transform"
+              className="rounded-full w-20 h-20 p-0 flex items-center justify-center hover:scale-110 transition-transform duration-200 shadow-lg"
             >
-              <PhoneOff className="w-6 h-6" />
+              <PhoneOff className="w-8 h-8" />
             </Button>
 
             {/* Accept button */}
             <Button
               onClick={handleAccept}
-              className="rounded-full w-16 h-16 p-0 flex items-center justify-center bg-green-500 hover:bg-green-600 hover:scale-110 transition-transform"
+              size="lg"
+              className="rounded-full w-20 h-20 p-0 flex items-center justify-center bg-green-500 hover:bg-green-600 hover:scale-110 transition-transform duration-200 shadow-lg"
             >
-              <Phone className="w-6 h-6" />
+              <Phone className="w-8 h-8" />
             </Button>
           </div>
+
+          {/* Sub text */}
+          <p className="text-xs text-gray-400 mt-4">
+            Nhấn để chấp nhận hoặc từ chối
+          </p>
         </div>
       </DialogContent>
     </Dialog>

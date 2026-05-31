@@ -178,7 +178,7 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
   },
 
   handleIncomingCall: (data: any) => {
-    const { callerId, callerInfo, callId } = data;
+    const { callerId, callerInfo, callId, offer } = data;
 
     set((state) => ({
       callState: {
@@ -187,6 +187,7 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
         callId,
         callerId,
         callerInfo,
+        offer, // Lưu offer để receiver dùng
       },
     }));
   },
@@ -440,6 +441,7 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
         status: "idle",
         callerId: null,
         receiverId: null,
+        offer: undefined,
         isAudioOn: true,
         isVideoOn: true,
         duration: 0,

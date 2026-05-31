@@ -23,12 +23,13 @@ const callSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
-        "missed",
+        "calling",
         "accepted",
         "rejected",
         "ended",
+        "missed",
       ],
-      default: "missed",
+      default: "calling",
     },
 
     startedAt: Date,

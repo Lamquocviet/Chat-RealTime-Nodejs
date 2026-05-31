@@ -24,11 +24,11 @@ export const initiateCall = async (req, res) => {
       return res.status(404).json({ message: "Người dùng không tồn tại" });
     }
 
-    // Kiểm tra có cuộc gọi đang diễn ra không
+    // Kiểm tra có cuộc gọi đang diễn ra không (calling or accepted)
     const activeCall = await Call.findOne({
       $or: [
-        { caller: callerId, receiver: receiverId, status: { $in: ["missed", "accepted"] } },
-        { caller: receiverId, receiver: callerId, status: { $in: ["missed", "accepted"] } },
+        { caller: callerId, receiver: receiverId, status: { $in: ["calling", "accepted"] } },
+        { caller: receiverId, receiver: callerId, status: { $in: ["calling", "accepted"] } },
       ],
     });
 
@@ -36,20 +36,17 @@ export const initiateCall = async (req, res) => {
       return res.status(400).json({ message: "Có cuộc gọi đang diễn ra" });
     }
 
-    // Tạo document cuộc gọi
+    // Tạo document cuộc gọi với status 'calling'
     const newCall = new Call({
       caller: callerId,
       receiver: receiverId,
       type: "video",
-      status: "missed", // Chưa được chấp nhận
+      status: "calling",
     });
 
     await newCall.save();
 
-    return res.status(201).json({
-      call: newCall,
-      message: "Cuộc gọi được tạo",
-    });
+    return res.status(201).json({ call: newCall, message: "Cuộc gọi được tạo" });
   } catch (error) {
     console.error("Lỗi khi khởi tạo cuộc gọi:", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
@@ -66,24 +63,17 @@ export const acceptCall = async (req, res) => {
     const userId = req.user._id;
 
     const call = await Call.findById(callId);
-    if (!call) {
-      return res.status(404).json({ message: "Cuộc gọi không tồn tại" });
-    }
+    if (!call) return res.status(404).json({ message: "Cuộc gọi không tồn tại" });
 
-    // Kiểm tra người dùng có phải là receiver không
     if (call.receiver.toString() !== userId.toString()) {
       return res.status(403).json({ message: "Bạn không phải người nhận cuộc gọi này" });
     }
 
-    // Cập nhật trạng thái cuộc gọi
     call.status = "accepted";
     call.startedAt = new Date();
     await call.save();
 
-    return res.status(200).json({
-      call,
-      message: "Cuộc gọi được chấp nhận",
-    });
+    return res.status(200).json({ call, message: "Cuộc gọi đã được chấp nhận" });
   } catch (error) {
     console.error("Lỗi khi chấp nhận cuộc gọi:", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
@@ -100,23 +90,16 @@ export const rejectCall = async (req, res) => {
     const userId = req.user._id;
 
     const call = await Call.findById(callId);
-    if (!call) {
-      return res.status(404).json({ message: "Cuộc gọi không tồn tại" });
-    }
+    if (!call) return res.status(404).json({ message: "Cuộc gọi không tồn tại" });
 
-    // Kiểm tra người dùng có phải là receiver không
     if (call.receiver.toString() !== userId.toString()) {
       return res.status(403).json({ message: "Bạn không phải người nhận cuộc gọi này" });
     }
 
-    // Cập nhật trạng thái cuộc gọi
     call.status = "rejected";
     await call.save();
 
-    return res.status(200).json({
-      call,
-      message: "Cuộc gọi bị từ chối",
-    });
+    return res.status(200).json({ call, message: "Cuộc gọi bị từ chối" });
   } catch (error) {
     console.error("Lỗi khi từ chối cuộc gọi:", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
@@ -133,11 +116,8 @@ export const endCall = async (req, res) => {
     const userId = req.user._id;
 
     const call = await Call.findById(callId);
-    if (!call) {
-      return res.status(404).json({ message: "Cuộc gọi không tồn tại" });
-    }
+    if (!call) return res.status(404).json({ message: "Cuộc gọi không tồn tại" });
 
-    // Kiểm tra người dùng có phải là caller hoặc receiver không
     if (
       call.caller.toString() !== userId.toString() &&
       call.receiver.toString() !== userId.toString()
@@ -145,16 +125,12 @@ export const endCall = async (req, res) => {
       return res.status(403).json({ message: "Bạn không phải người trong cuộc gọi này" });
     }
 
-    // Cập nhật trạng thái cuộc gọi
     call.status = "ended";
     call.endedAt = new Date();
     call.duration = call.startedAt ? Math.floor((call.endedAt - call.startedAt) / 1000) : 0;
     await call.save();
 
-    return res.status(200).json({
-      call,
-      message: "Cuộc gọi kết thúc",
-    });
+    return res.status(200).json({ call, message: "Cuộc gọi kết thúc" });
   } catch (error) {
     console.error("Lỗi khi kết thúc cuộc gọi:", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
@@ -170,18 +146,14 @@ export const getCallHistory = async (req, res) => {
     const userId = req.user._id;
     const { limit = 20, skip = 0 } = req.query;
 
-    const calls = await Call.find({
-      $or: [{ caller: userId }, { receiver: userId }],
-    })
+    const calls = await Call.find({ $or: [{ caller: userId }, { receiver: userId }] })
       .populate("caller", "username displayName avatarUrl")
       .populate("receiver", "username displayName avatarUrl")
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip(parseInt(skip));
 
-    const total = await Call.countDocuments({
-      $or: [{ caller: userId }, { receiver: userId }],
-    });
+    const total = await Call.countDocuments({ $or: [{ caller: userId }, { receiver: userId }] });
 
     return res.status(200).json({
       calls,
@@ -197,3 +169,4 @@ export const getCallHistory = async (req, res) => {
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
+ 

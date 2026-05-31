@@ -82,6 +82,7 @@ export interface CallState {
   status: "idle" | "calling" | "ringing" | "connected" | "ended";
   callerId: string | null;
   receiverId: string | null;
+  offer?: RTCSessionDescriptionInit; // Lưu offer cho receiver
   callerInfo?: {
     _id: string;
     displayName: string;

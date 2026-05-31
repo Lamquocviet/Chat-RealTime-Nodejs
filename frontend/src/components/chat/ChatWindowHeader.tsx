@@ -170,7 +170,7 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
                 }
                 className="text-muted-foreground hover:text-foreground cursor-pointer"
               >
-                <Video className="size-5" />
+                <Video className="size-7 cursor-pointer" />
               </Button>
             </div>
           )}
