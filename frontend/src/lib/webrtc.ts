@@ -131,9 +131,8 @@ export const setRemoteDescription = async (
   description: RTCSessionDescriptionInit
 ) => {
   try {
-    await peerConnection.setRemoteDescription(
-      new RTCSessionDescription(description)
-    );
+    // Modern WebRTC API - pass object directly, not RTCSessionDescription()
+    await peerConnection.setRemoteDescription(description);
   } catch (error) {
     console.error("Lỗi khi set remote description:", error);
     throw error;

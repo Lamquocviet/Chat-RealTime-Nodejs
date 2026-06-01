@@ -6,19 +6,16 @@ import { toast } from "sonner";
 import type { CallState } from "@/types/chat";
 
 interface IUseCallStore {
-  // State
   callState: CallState;
   peerConnection: RTCPeerConnection | null;
   localStream: MediaStream | null;
   remoteStream: MediaStream | null;
+  pendingIceCandidates: RTCIceCandidateInit[];
   callDuration: number;
 
-  // Actions
   initializeCall: (receiverId: string, receiverInfo: any, callType?: "audio" | "video") => Promise<void>;
   handleIncomingCall: (data: any) => void;
-   handleCallAccepted: (
-    answer: RTCSessionDescriptionInit
-  ) => Promise<void>;
+  handleCallAccepted: (answer: RTCSessionDescriptionInit) => Promise<void>;
   acceptCall: (offer: RTCSessionDescriptionInit) => Promise<void>;
   rejectCall: (reason?: string) => Promise<void>;
   toggleAudio: (enabled: boolean) => void;
@@ -29,7 +26,96 @@ interface IUseCallStore {
   setRemoteStream: (stream: MediaStream | null) => void;
   setPeerConnection: (pc: RTCPeerConnection | null) => void;
   addRemoteTrack: (event: RTCTrackEvent) => void;
+  addRemoteIceCandidate: (candidate: RTCIceCandidateInit | null) => Promise<void>;
 }
+
+// ── Helper: lấy user media với fallback audio-only ──────────────
+const getMediaStream = async (
+  callType: "audio" | "video",
+  onVideoFallback?: () => void
+): Promise<MediaStream> => {
+  if (callType === "video") {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+    } catch (err) {
+      console.warn("getUserMedia video failed:", (err as any).name, "— falling back to audio only");
+      onVideoFallback?.();
+    }
+  }
+
+  // audio-only (hoặc fallback từ video)
+  try {
+    return await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  } catch (err) {
+    console.error("getUserMedia audio failed:", (err as any).name);
+    throw new Error("Không thể truy cập microphone. Kiểm tra lại thiết bị và quyền truy cập.");
+  }
+};
+
+// ── Helper: tạo RTCPeerConnection ───────────────────────────────
+const ICE_SERVERS = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+];
+
+const buildPeerConnection = (
+  onIceCandidate: (c: RTCIceCandidate) => void,
+  onTrack: (e: RTCTrackEvent) => void
+): RTCPeerConnection => {
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) onIceCandidate(e.candidate);
+  };
+  pc.ontrack = onTrack;
+  pc.onconnectionstatechange = () =>
+    console.log("[WEBRTC] connectionState:", pc.connectionState);
+  pc.oniceconnectionstatechange = () =>
+    console.log("[WEBRTC] iceConnectionState:", pc.iceConnectionState);
+
+  return pc;
+};
+
+// ── Helper: xử lý ontrack event ────────────────────────────────
+const resolveRemoteStream = (
+  event: RTCTrackEvent,
+  existing: MediaStream | null
+): MediaStream => {
+  if (event.streams?.[0]) return event.streams[0];
+
+  if (existing) {
+    try {
+      existing.addTrack(event.track);
+    } catch (e) {
+      console.warn("[WEBRTC] addTrack to existing stream failed:", e);
+    }
+    return existing;
+  }
+
+  return new MediaStream([event.track]);
+};
+
+// ── Helper: flush pending ICE candidates ───────────────────────
+const flushPendingCandidates = async (
+  pc: RTCPeerConnection,
+  pending: RTCIceCandidateInit[]
+): Promise<void> => {
+  if (!pending.length) return;
+  console.log("[WEBRTC] Flushing pending ICE candidates:", pending.length);
+  for (const c of pending) {
+    try {
+      await pc.addIceCandidate(new RTCIceCandidate(c));
+    } catch (e) {
+      console.warn("[WEBRTC] Could not add pending ICE candidate:", e);
+    }
+  }
+};
+
+// ───────────────────────────────────────────────────────────────
 
 export const useCallStore = create<IUseCallStore>((set, get) => ({
   callState: {
@@ -44,120 +130,70 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
   peerConnection: null,
   localStream: null,
   remoteStream: null,
+  pendingIceCandidates: [],
   callDuration: 0,
 
-  initializeCall: async (receiverId: string, receiverInfo: any, callType = "video") => {
+  // ── initializeCall (Caller) ───────────────────────────────────
+  initializeCall: async (receiverId, receiverInfo, callType = "video") => {
+    const { user } = useAuthStore.getState();
+    const { socket } = useSocketStore.getState();
+
+    if (!user) { toast.error("Bạn chưa đăng nhập"); return; }
+    if (!socket) { toast.error("Socket chưa kết nối. Vui lòng tải lại trang"); return; }
+
     try {
-      const { user } = useAuthStore.getState();
-      const { socket } = useSocketStore.getState();
+      // 1. Tạo Call document
+      const { call } = await callService.initiateCall(receiverId);
+      const callId = call._id;
 
-      if (!user) {
-        throw new Error("Bạn chưa đăng nhập");
-      }
-
-      if (!socket) {
-        throw new Error("Socket chưa kết nối. Vui lòng tải lại trang");
-      }
-
-      console.log("🔵 Bước 1: Gọi API để tạo Call document");
-
-      // STEP 1: Gọi REST API để tạo Call document
-      const callResponse = await callService.initiateCall(receiverId);
-      const callId = callResponse.call._id;
-
-      console.log("✅ Bước 1 OK - CallId:", callId);
-      console.log("🔵 Bước 2: Lấy camera/microphone");
-
-      // STEP 2: Get user media - audio always, video only if video call
-      let stream: MediaStream | null = null;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: callType === "video" ? { width: 1280, height: 720 } : false,
-        });
-      } catch (err) {
-        console.warn("getUserMedia failed for video, falling back to audio if possible:", err);
-        // If video failed, try audio-only as a fallback
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-            set((state) => ({
-              callState: { ...state.callState, isVideoOn: false },
-            }));
-            toast("Không thể truy cập camera, chuyển sang cuộc gọi chỉ âm thanh");
-        } catch (err2) {
-          console.error("Không thể truy cập microphone hoặc camera:", err2);
-          throw err2;
-        }
-      }
-
+      // 2. Lấy media
+      let isVideoOn = callType === "video";
+      const stream = await getMediaStream(callType, () => {
+        isVideoOn = false;
+        toast("Không thể truy cập camera, chuyển sang cuộc gọi chỉ âm thanh");
+      });
       set({ localStream: stream });
-      console.log("Local stream tracks:", stream.getTracks().map(t=>({kind:t.kind,enabled:t.enabled,id:t.id}))); 
-      console.log("✅ Bước 2 OK - Stream:", stream.id);
-      console.log("🔵 Bước 3: Tạo RTCPeerConnection");
 
-      // STEP 3: Create peer connection
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" },
-        ],
-      });
-
-      // Add local stream to peer connection
-      stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
-      });
-
-      // Handle ICE candidates
-      pc.onicecandidate = (event) => {
-        if (event.candidate && socket) {
-          console.log("📤 Gửi ICE candidate");
+      // 3. Tạo PeerConnection
+      const pc = buildPeerConnection(
+        (candidate) => {
           socket.emit("video-call:ice-candidate", {
             to: receiverId,
-            candidate: event.candidate.toJSON(),
+            candidate: candidate.toJSON(),
             callId,
           });
+        },
+        (event) => {
+          const remote = resolveRemoteStream(event, get().remoteStream);
+          set({ remoteStream: remote });
         }
-      };
+      );
 
-      // Handle remote stream
-      pc.ontrack = (event) => {
-        if (event.streams && event.streams[0]) {
-          console.log("📹 Nhận remote stream");
-          set({ remoteStream: event.streams[0] });
-        }
-      };
+      // 4. Add tracks
+      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
 
-      pc.onconnectionstatechange = () => {
-        console.log("🔌 Connection state:", pc.connectionState);
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        console.log("🧊 ICE state:", pc.iceConnectionState);
-      };
-
+      // 5. Set PC vào store & flush pending candidates
       set({ peerConnection: pc });
-      console.log("✅ Bước 3 OK - PeerConnection:", pc.connectionState);
-      console.log("🔵 Bước 4: Tạo Offer");
+      const pending = get().pendingIceCandidates;
+      await flushPendingCandidates(pc, pending);
+      if (pending.length) set({ pendingIceCandidates: [] });
 
-      // STEP 4: Create and send offer
+      // 6. Tạo offer
       const offer = await pc.createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: callType === "video",
       });
-
       await pc.setLocalDescription(offer);
-      console.log("✅ Bước 4 OK - Offer tạo và set");
 
-      // Update state BEFORE emitting
-      set((state) => ({
+      // 7. Update state
+      set((s) => ({
         callState: {
-          ...state.callState,
+          ...s.callState,
           callId,
           status: "calling",
           callerId: user._id,
           receiverId,
+          isVideoOn,
           callerInfo: {
             _id: user._id,
             displayName: user.displayName,
@@ -167,12 +203,10 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
         },
       }));
 
-      console.log("🔵 Bước 5: Gửi socket event video-call:initiate");
-
-      // STEP 5: Emit initiate event
+      // 8. Emit socket
       socket.emit("video-call:initiate", {
         receiverId,
-        offer: pc.localDescription ? pc.localDescription.toJSON() : offer,
+        offer: pc.localDescription!.toJSON(),
         callId,
         callType,
         callerId: user._id,
@@ -183,300 +217,190 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
         },
       });
 
-      console.log("✅ Bước 5 OK - Socket event đã gửi");
-      toast.success(`Đang gọi ${callType === "audio" ? "thoại" : "video"} đến ` + receiverInfo.displayName);
+      toast.success(`Đang gọi ${callType === "audio" ? "thoại" : "video"} đến ${receiverInfo.displayName}`);
     } catch (error) {
-      console.error("❌ Lỗi khi khởi tạo cuộc gọi:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Lỗi khi bắt đầu cuộc gọi"
-      );
-      throw error;
+      console.error("❌ initializeCall:", error);
+      toast.error(error instanceof Error ? error.message : "Lỗi khi bắt đầu cuộc gọi");
+      get().resetCallState();
     }
   },
 
-  handleIncomingCall: (data: any) => {
+  // ── handleIncomingCall (Receiver nhận signal) ─────────────────
+  handleIncomingCall: (data) => {
     const { callerId, callerInfo, callId, offer } = data;
-
-    set((state) => ({
+    set((s) => ({
       callState: {
-        ...state.callState,
+        ...s.callState,
         status: "ringing",
         callId,
         callerId,
         callerInfo,
-        offer, // Lưu offer để receiver dùng
+        offer,
       },
     }));
   },
-  handleCallAccepted: async (
-  answer: RTCSessionDescriptionInit
-) => {
-  try {
+
+  // ── handleCallAccepted (Caller nhận answer) ───────────────────
+  handleCallAccepted: async (answer) => {
     const { peerConnection } = get();
 
     if (!peerConnection) {
-      console.error("PeerConnection not found");
+      toast.error("Lỗi: Kết nối peer bị mất");
+      get().resetCallState();
       return;
     }
 
-    await peerConnection.setRemoteDescription(
-      new RTCSessionDescription(answer)
-    );
-
-    set((state) => ({
-      callState: {
-        ...state.callState,
-        status: "connected",
-      },
-    }));
-
-    console.log("Call connected");
-  } catch (error) {
-    console.error(
-      "Lỗi khi xử lý answer:",
-      error
-    );
-  }
-},
-
-  acceptCall: async (offer: RTCSessionDescriptionInit) => {
     try {
-      if (!offer) {
-        console.error("acceptCall: missing offer");
-        toast.error("Không có offer để chấp nhận cuộc gọi");
-        get().resetCallState();
-        return;
-      }
-      const { socket } = useSocketStore.getState();
-      const { callState, localStream } = get();
+      await peerConnection.setRemoteDescription(answer);
 
-      if (!callState.callerId) throw new Error("Call ID not found");
-      if (!callState.callId) throw new Error("Call document ID not found");
+      const pending = get().pendingIceCandidates;
+      await flushPendingCandidates(peerConnection, pending);
+      if (pending.length) set({ pendingIceCandidates: [] });
 
-      console.log("🔵 Chấp nhận cuộc gọi - CallId:", callState.callId);
+      set((s) => ({ callState: { ...s.callState, status: "connected" } }));
+    } catch (error) {
+      console.error("❌ handleCallAccepted:", error);
+      toast.error("Lỗi khi kết nối cuộc gọi");
+      get().resetCallState();
+    }
+  },
 
-      // Get user media if not already available, with video fallback
-      let stream = localStream;
-      if (!stream) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 1280, height: 720 } });
-        } catch (err) {
-          console.warn("getUserMedia failed for video on accept, falling back to audio:", err);
-          try {
-            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-            set((state) => ({ callState: { ...state.callState, isVideoOn: false } }));
-            toast("Không thể truy cập camera, chấp nhận cuộc gọi chỉ âm thanh");
-          } catch (err2) {
-            console.error("Không thể truy cập microphone:", err2);
-            throw err2;
-          }
-        }
+  // ── acceptCall (Receiver chấp nhận) ──────────────────────────
+  acceptCall: async (offer) => {
+    if (!offer?.sdp || !offer?.type) {
+      toast.error("Lỗi: Định dạng offer không hợp lệ");
+      get().resetCallState();
+      return;
+    }
 
-        set({ localStream: stream });
-      }
+    const { socket } = useSocketStore.getState();
+    const { callState } = get();
 
-      // Create peer connection
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" },
-        ],
+    if (!callState.callerId) { toast.error("Không tìm thấy caller"); get().resetCallState(); return; }
+    if (!callState.callId) { toast.error("Không tìm thấy call ID"); get().resetCallState(); return; }
+    if (!socket) { toast.error("Socket chưa kết nối"); get().resetCallState(); return; }
+
+    try {
+      // 1. Lấy media
+      let isVideoOn = true;
+      const stream = await getMediaStream("video", () => {
+        isVideoOn = false;
+        toast("Không thể truy cập camera, chấp nhận cuộc gọi chỉ âm thanh");
       });
+      set({ localStream: stream });
 
-      // Add local stream to peer connection
-      stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
-      });
-
-      // Handle ICE candidates
-      pc.onicecandidate = (event) => {
-        if (event.candidate && socket) {
+      // 2. Tạo PeerConnection
+      const pc = buildPeerConnection(
+        (candidate) => {
           socket.emit("video-call:ice-candidate", {
             to: callState.callerId,
-            candidate: event.candidate.toJSON(),
+            candidate: candidate.toJSON(),
             callId: callState.callId,
           });
+        },
+        (event) => {
+          const remote = resolveRemoteStream(event, get().remoteStream);
+          set({ remoteStream: remote });
         }
-      };
+      );
 
-      // Handle remote stream
-      pc.ontrack = (event) => {
-        if (event.streams && event.streams[0]) {
-          console.log("Received remote tracks:", event.streams[0].getTracks().map(t=>({kind:t.kind,enabled:t.enabled,id:t.id}))); 
-          set({ remoteStream: event.streams[0] });
-        }
-      };
+      // 3. Add local tracks
+      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
 
-      // Set remote description (offer)
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      // 4. Set PC vào store & flush pending candidates
+      set({ peerConnection: pc, callState: { ...get().callState, isVideoOn } });
+      const pending = get().pendingIceCandidates;
+      await flushPendingCandidates(pc, pending);
+      if (pending.length) set({ pendingIceCandidates: [] });
 
-      // Create and send answer
+      // 5. Set remote description (offer) → tạo answer
+      await pc.setRemoteDescription(offer);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
-      if (!socket) {
-        throw new Error("Socket không kết nối");
-      }
-
-      // Emit accept event (send SDP as JSON)
+      // 6. Emit answer
       socket.emit("video-call:accept", {
         callerId: callState.callerId,
-        answer: pc.localDescription ? pc.localDescription.toJSON() : answer,
+        answer: pc.localDescription!.toJSON(),
         callId: callState.callId,
       });
 
-      set((state) => ({
-        peerConnection: pc,
-        callState: {
-          ...state.callState,
-          status: "connected",
-        },
-      }));
-
-      console.log("✅ Chấp nhận cuộc gọi thành công");
-    } catch (error: any) {
-      console.error("❌ Lỗi khi chấp nhận cuộc gọi:", error);
-      const msg = error?.message || String(error);
-      toast.error("Lỗi khi chấp nhận cuộc gọi: " + msg);
-      // reset call state to avoid stuck ringing state
-      try {
-        get().resetCallState();
-      } catch (e) {
-        console.error("Error resetting call state:", e);
-      }
-      return;
+      // 7. Update state
+      set((s) => ({ callState: { ...s.callState, status: "connected" } }));
+    } catch (error) {
+      console.error("❌ acceptCall:", error);
+      toast.error(error instanceof Error ? error.message : "Lỗi khi chấp nhận cuộc gọi");
+      get().resetCallState();
     }
   },
 
+  // ── rejectCall ────────────────────────────────────────────────
   rejectCall: async (reason = "Người dùng từ chối") => {
-    try {
-      const { socket } = useSocketStore.getState();
-      const { callState } = get();
+    const { socket } = useSocketStore.getState();
+    const { callState } = get();
 
-      if (!callState.callId) {
-        console.warn("Call ID not found for rejection");
-        get().resetCallState();
-        return;
+    if (callState.callId) {
+      try { await callService.rejectCall(callState.callId); } catch (e) {
+        console.warn("API rejectCall failed:", e);
       }
-
-      console.log("🔵 Từ chối cuộc gọi:", callState.callId);
-
-      // Gọi API
-      try {
-        await callService.rejectCall(callState.callId);
-        console.log("✅ API từ chối cuộc gọi thành công");
-      } catch (apiError) {
-        console.error("⚠️ Lỗi gọi API từ chối:", apiError);
-        // Tiếp tục emit socket event dù API lỗi
-      }
-
-      // Emit socket event
-      if (socket && callState.callerId) {
-        socket.emit("video-call:reject", {
-          callerId: callState.callerId,
-          reason,
-          callId: callState.callId,
-        });
-      }
-
-      get().resetCallState();
-    } catch (error) {
-      console.error("❌ Lỗi khi từ chối cuộc gọi:", error);
-      get().resetCallState();
     }
-  },
 
-  toggleAudio: (enabled: boolean) => {
-    const { localStream } = get();
-    if (localStream) {
-      localStream.getAudioTracks().forEach((track) => {
-        track.enabled = enabled;
+    if (socket && callState.callerId) {
+      socket.emit("video-call:reject", {
+        callerId: callState.callerId,
+        reason,
+        callId: callState.callId,
       });
     }
 
-    set((state) => ({
-      callState: {
-        ...state.callState,
-        isAudioOn: enabled,
-      },
-    }));
+    get().resetCallState();
   },
 
-  toggleVideo: (enabled: boolean) => {
-    const { localStream } = get();
-    if (localStream) {
-      localStream.getVideoTracks().forEach((track) => {
-        track.enabled = enabled;
-      });
-    }
-
-    set((state) => ({
-      callState: {
-        ...state.callState,
-        isVideoOn: enabled,
-      },
-    }));
+  // ── toggleAudio / toggleVideo ─────────────────────────────────
+  toggleAudio: (enabled) => {
+    get().localStream?.getAudioTracks().forEach((t) => { t.enabled = enabled; });
+    set((s) => ({ callState: { ...s.callState, isAudioOn: enabled } }));
   },
 
+  toggleVideo: (enabled) => {
+    get().localStream?.getVideoTracks().forEach((t) => { t.enabled = enabled; });
+    set((s) => ({ callState: { ...s.callState, isVideoOn: enabled } }));
+  },
+
+  // ── endCall ───────────────────────────────────────────────────
   endCall: async () => {
-    try {
-      const { socket } = useSocketStore.getState();
-      const { callState, peerConnection, localStream, remoteStream } = get();
+    const { socket } = useSocketStore.getState();
+    const { callState, peerConnection, localStream, remoteStream } = get();
 
-      console.log("🔵 Kết thúc cuộc gọi:", callState.callId);
-
-      // Call API to end call
-      if (callState.callId) {
-        try {
-          await callService.endCall(callState.callId);
-          console.log("✅ API kết thúc cuộc gọi thành công");
-        } catch (apiError) {
-          console.error("⚠️ Lỗi gọi API kết thúc:", apiError);
-        }
+    if (callState.callId) {
+      try { await callService.endCall(callState.callId); } catch (e) {
+        console.warn("API endCall failed:", e);
       }
-
-      // Emit end call event
-      if (socket && callState.callId) {
-        const to =
-          callState.callerId === useAuthStore.getState().user?._id
-            ? callState.receiverId
-            : callState.callerId;
-
-        socket.emit("video-call:end", {
-          to,
-          callId: callState.callId,
-        });
-      }
-
-      // Close peer connection
-      if (peerConnection) {
-        peerConnection.close();
-      }
-
-      // Stop local stream
-      if (localStream) {
-        localStream.getTracks().forEach((track) => {
-          track.stop();
-        });
-      }
-
-      // Stop remote stream
-      if (remoteStream) {
-        remoteStream.getTracks().forEach((track) => {
-          track.stop();
-        });
-      }
-
-      get().resetCallState();
-      console.log("✅ Kết thúc cuộc gọi hoàn tất");
-    } catch (error) {
-      console.error("❌ Lỗi khi kết thúc cuộc gọi:", error);
-      get().resetCallState();
     }
+
+    if (socket && callState.callId) {
+      const to = callState.callerId === useAuthStore.getState().user?._id
+        ? callState.receiverId
+        : callState.callerId;
+
+      socket.emit("video-call:end", { to, callId: callState.callId });
+    }
+
+    peerConnection?.close();
+    localStream?.getTracks().forEach((t) => t.stop());
+    remoteStream?.getTracks().forEach((t) => t.stop());
+
+    get().resetCallState();
   },
 
+  // ── resetCallState ────────────────────────────────────────────
   resetCallState: () => {
+    // Stop mọi stream/pc trước khi reset
+    const { peerConnection, localStream, remoteStream } = get();
+    peerConnection?.close();
+    localStream?.getTracks().forEach((t) => t.stop());
+    remoteStream?.getTracks().forEach((t) => t.stop());
+
     set({
       callState: {
         callId: null,
@@ -492,24 +416,35 @@ export const useCallStore = create<IUseCallStore>((set, get) => ({
       localStream: null,
       remoteStream: null,
       callDuration: 0,
+      pendingIceCandidates: [],
     });
   },
 
-  setLocalStream: (stream: MediaStream | null) => {
-    set({ localStream: stream });
+  // ── Misc setters ──────────────────────────────────────────────
+  setLocalStream: (stream) => set({ localStream: stream }),
+  setRemoteStream: (stream) => set({ remoteStream: stream }),
+  setPeerConnection: (pc) => set({ peerConnection: pc }),
+
+  addRemoteTrack: (event) => {
+    if (event.streams?.[0]) set({ remoteStream: event.streams[0] });
   },
 
-  setRemoteStream: (stream: MediaStream | null) => {
-    set({ remoteStream: stream });
-  },
+  // ── addRemoteIceCandidate ─────────────────────────────────────
+  addRemoteIceCandidate: async (candidate) => {
+    if (!candidate) return;
+    const { peerConnection } = get();
 
-  setPeerConnection: (pc: RTCPeerConnection | null) => {
-    set({ peerConnection: pc });
-  },
-
-  addRemoteTrack: (event: RTCTrackEvent) => {
-    if (event.streams && event.streams[0]) {
-      set({ remoteStream: event.streams[0] });
+    if (peerConnection) {
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.warn("[WEBRTC] addIceCandidate failed:", e);
+      }
+    } else {
+      // Queue lại để flush sau khi PC sẵn sàng
+      set((s) => ({
+        pendingIceCandidates: [...s.pendingIceCandidates, candidate],
+      }));
     }
   },
 }));

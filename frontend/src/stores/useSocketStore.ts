@@ -25,9 +25,8 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     set({ socket });
 
     socket.on("connect", () => {
-      console.log("Đã kết nối với socket");
+      console.log("Socket connected:", socket.id);
     });
-
 
     // online users
     socket.on("online-users", (userIds) => {
@@ -104,16 +103,9 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       
       useCallStore.getState().handleCallAccepted(answer);
     });
-    socket.on("connect", () => {
-  console.log("Socket connected:", socket.id);
-});
 
-// Debug tất cả event nhận được
-socket.onAny((event, ...args) => {
-  console.log("SOCKET EVENT:", event, args);
-});
     // Caller nhận khi receiver TỪ CHỐI
-    socket.on("video-call:reject", (data: any) => {
+    socket.on("video-call:rejected", (data: any) => {
       console.log("❌ Receiver từ chối cuộc gọi:", data);
       const { reason } = data;
       
@@ -122,8 +114,7 @@ socket.onAny((event, ...args) => {
     });
 
     // Cả hai bên nhận khi cuộc gọi kết thúc
-    socket.on("video-call:end", (data: any) => {
-      console.log("🔴 Cuộc gọi kết thúc:", data);
+    socket.on("video-call:ended", (data: any) => { 
       const { callId } = data;
       
       const { callState } = useCallStore.getState();
@@ -134,16 +125,13 @@ socket.onAny((event, ...args) => {
 
     // ICE Candidate exchange
     socket.on("video-call:ice-candidate", (data: any) => {
-      console.log("🧊 Nhận ICE candidate");
+      console.log("[WEBRTC] Received ICE candidate from network");
       const { candidate } = data;
-      const { peerConnection } = useCallStore.getState();
-      
-      if (peerConnection && candidate) {
-        try {
-          peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (error) {
-          console.error("Lỗi thêm ICE candidate:", error);
-        }
+      if (candidate) {
+        // Delegate to call store which will add or queue candidate
+        useCallStore.getState().addRemoteIceCandidate(candidate).catch((err) => {
+          console.error("[WEBRTC] Error processing ICE candidate:", err);
+        });
       }
     });
   },

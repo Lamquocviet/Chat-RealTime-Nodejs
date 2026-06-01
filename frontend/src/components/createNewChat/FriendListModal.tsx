@@ -4,14 +4,25 @@ import { MessageCircleMore, Users } from "lucide-react";
 import { Card } from "../ui/card";
 import UserAvatar from "../chat/UserAvatar";
 import { useChatStore } from "@/stores/useChatStore";
+import {useState} from "react";
 
 const FriendListModal = () => {
-  const { friends } = useFriendStore();
+  const { friends, searchByUsername } = useFriendStore();
   const { createConversation } = useChatStore();
+  const [username, setUsername] = useState("");
+  const [searchResults, setSearchResults] = useState<any> (null);
 
   const handleAddConversation = async (friendId: string) => {
     await createConversation("direct", "", [friendId]);
   };
+
+  const handleSearch = async () =>{
+    if(!username.trim()) return;
+
+    const user = await searchByUsername(username);
+    setSearchResults(user);
+  }
+
 
   return (
     <DialogContent className="glass max-w-md">
@@ -23,6 +34,53 @@ const FriendListModal = () => {
         <DialogDescription>
           Chọn một bạn bè để bắt đầu cuộc trò chuyện trực tiếp
         </DialogDescription>
+        <div className="flex gap-2">
+  <input
+    value={username}
+    onChange={(e) => setUsername(e.target.value)}
+     onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  }}
+    placeholder="Nhập username..."
+    
+    className="flex-1 rounded-md border px-3 py-2"
+  />
+
+  <button
+    onClick={handleSearch}
+    className="px-4 py-2 rounded-md bg-primary text-white"
+  >
+    Tìm
+  </button>
+   {/* Search Result */}
+  {searchResults && (
+    <Card
+      className="p-3 cursor-pointer"
+      onClick={() => handleAddConversation(searchResults._id)}
+    >
+      <div className="flex items-center gap-3">
+        <UserAvatar
+          type="sidebar"
+          name={searchResults.displayName}
+          avatarUrl={searchResults.avatarUrl}
+        />
+
+        <div>
+          <p className="font-medium">
+            {searchResults.displayName}
+          </p>
+
+          <p className="text-sm text-muted-foreground">
+            @{searchResults.username}
+          </p>
+        </div>
+      </div>
+    </Card>
+  )}
+</div>
+
       </DialogHeader>
 
       {/* friends list */}
