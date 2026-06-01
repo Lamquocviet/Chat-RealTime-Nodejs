@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useChatStore } from "@/stores/useChatStore";
-import type { Conversation } from "@/types/chat";
+import type { Conversation, Participant } from "@/types/chat";
 import { SidebarTrigger } from "../ui/sidebar";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Separator } from "../ui/separator";
@@ -9,15 +9,20 @@ import StatusBadge from "./StatusBadge";
 import GroupChatAvatar from "./GroupChatAvatar";
 import { useSocketStore } from "@/stores/useSocketStore";
 import ViewUserProfileDialog from "@/components/profile/ViewUserProfileDialog";
+import { useCallStore } from "@/stores/useCallStore";
+import { Phone, Video } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
   const { conversations, activeConversationId } = useChatStore();
   const { user } = useAuthStore();
   const { onlineUsers } = useSocketStore();
+  const { initializeCall, callState } = useCallStore();
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  let otherUser;
+  let otherUser: Participant | null = null;
 
   chat = chat ?? conversations.find((c) => c._id === activeConversationId);
 
@@ -43,6 +48,58 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     }
   };
 
+  const handleVideoCall = async () => {
+    if (!otherUser) return;
+
+    if (callState.status !== "idle") {
+      toast.error("Có cuộc gọi đang diễn ra");
+      return;
+    }
+
+    if (!onlineUsers.includes(otherUser._id)) {
+      toast.error("Người dùng đang offline");
+      return;
+    }
+
+    try {
+      await initializeCall(otherUser._id, {
+        _id: otherUser._id,
+        displayName: otherUser.displayName,
+        avatarUrl: otherUser.avatarUrl,
+      }, "video");
+      toast.success("Đang gọi video đến " + otherUser.displayName);
+    } catch (error) {
+      console.error("Lỗi khi khởi tạo cuộc gọi video:", error);
+      toast.error("Lỗi khi bắt đầu cuộc gọi video");
+    }
+  };
+
+  const handleAudioCall = async () => {
+    if (!otherUser) return;
+
+    if (callState.status !== "idle") {
+      toast.error("Có cuộc gọi đang diễn ra");
+      return;
+    }
+
+    if (!onlineUsers.includes(otherUser._id)) {
+      toast.error("Người dùng đang offline");
+      return;
+    }
+
+    try {
+      await initializeCall(otherUser._id, {
+        _id: otherUser._id,
+        displayName: otherUser.displayName,
+        avatarUrl: otherUser.avatarUrl,
+      }, "audio");
+      toast.success("Đang gọi thoại đến " + otherUser.displayName);
+    } catch (error) {
+      console.error("Lỗi khi khởi tạo cuộc gọi thoại:", error);
+      toast.error("Lỗi khi bắt đầu cuộc gọi thoại");
+    }
+  };
+
   return (
     <>
       <header className="sticky top-0 z-10 px-4 py-2 flex items-center bg-background">
@@ -64,10 +121,11 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
                     avatarUrl={otherUser?.avatarUrl || undefined}
                     onClick={handleAvatarClick}
                   />
-                  {/* todo: socket io */}
                   <StatusBadge
                     status={
-                      onlineUsers.includes(otherUser?._id ?? "") ? "online" : "offline"
+                      onlineUsers.includes(otherUser?._id ?? "")
+                        ? "online"
+                        : "offline"
                     }
                   />
                 </>
@@ -81,9 +139,42 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
 
             {/* name */}
             <h2 className="font-semibold text-foreground">
-              {chat.type === "direct" ? otherUser?.displayName : chat.group?.name}
+              {chat.type === "direct"
+                ? otherUser?.displayName
+                : chat.group?.name}
             </h2>
           </div>
+
+          {/* Call buttons - only show for direct chat */}
+          {chat.type === "direct" && (
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleAudioCall}
+                disabled={
+                  !onlineUsers.includes(otherUser?._id ?? "") ||
+                  callState.status !== "idle"
+                }
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <Phone className="size-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleVideoCall}
+                disabled={
+                  !onlineUsers.includes(otherUser?._id ?? "") ||
+                  callState.status !== "idle"
+                }
+                
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <Video className="size-7 cursor-pointer"  />
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 

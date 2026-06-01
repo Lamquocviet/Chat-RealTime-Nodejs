@@ -24,10 +24,17 @@ export const searchUserByUsername = async (req, res) => {
         .json({ message: "Phải cung cấp username để tìm kiếm" });
     }
 
-    const user = await User.findOne({ username }).select(
-      "_id username avatarUrl displayName",
-    );
+    // const user = await User.findOne({ username }).select(
+    //   "_id username avatarUrl displayName",
+    // );
+    const user = await User.findOne({
+  username: {
+    $regex: `^${username}$`,
+    $options: "i",
+  },
+}).select("_id username avatarUrl displayName");
 
+return res.status(200).json({ user });
     return res.status(200).json({ user });
   } catch (error) {
     console.error("Lỗi khi searchUserByUsername", error);

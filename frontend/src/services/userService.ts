@@ -14,10 +14,7 @@ export const userService = {
   },
   updateProfile: async (data: { displayName?: string; email?: string; phone?: string; bio?: string }) => {
 
-      console.log("Calling PATCH API");
-
     const res = await api.patch("/users/updateProfile", data);
-    console.log(res);
     return res.data;
   },
   getUserProfile: async (userId: string) => {

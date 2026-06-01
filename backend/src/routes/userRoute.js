@@ -9,7 +9,7 @@ router.get("/me", authMe);
 router.get("/search", searchUserByUsername);
 router.get("/:userId", getUserProfile);
 router.post("/uploadAvatar", upload.single("file"), uploadAvatar);
-router.patch("/updateProfile", updateProfile);
+router.patch("/updateProfile", protectedRoute, updateProfile);
 
 
 export default router;
