@@ -7,6 +7,11 @@ const participantSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    role: {
+      type: String,
+      enum: ["owner", "member"],
+      default: "member",
+    },
     joinedAt: {
       type: Date,
       default: Date.now,
@@ -14,7 +19,7 @@ const participantSchema = new mongoose.Schema(
   },
   {
     _id: false,
-  }
+  },
 );
 
 const groupSchema = new mongoose.Schema(
@@ -30,7 +35,7 @@ const groupSchema = new mongoose.Schema(
   },
   {
     _id: false,
-  }
+  },
 );
 
 const lastMessageSchema = new mongoose.Schema(
@@ -51,7 +56,7 @@ const lastMessageSchema = new mongoose.Schema(
   },
   {
     _id: false,
-  }
+  },
 );
 
 const conversationSchema = new mongoose.Schema(
@@ -89,7 +94,7 @@ const conversationSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 conversationSchema.index({

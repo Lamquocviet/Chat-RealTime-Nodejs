@@ -148,7 +148,7 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
           {/* Call buttons - only show for direct chat */}
           {chat.type === "direct" && (
             <div className="flex gap-2">
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleAudioCall}
@@ -159,7 +159,7 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
                 className="text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <Phone className="size-5" />
-              </Button>
+              </Button> */}
               <Button
                 variant="ghost"
                 size="icon"
