@@ -464,4 +464,34 @@ export const leaveGroup = async (req, res) => {
 // Giải tán nhóm chat
 export const deleteConversation = async (req, res) => {
 
+  const {conversationId} = req.params;
+  try {
+    const conversation = await Conversation.findById(conversationId);
+    if(!conversation){
+      return res.status(404).json({message: "Conversation not found"});
+    }
+    if(conversation.type !== "group"){
+      return res.status(400).json({message: "Only group conversation can be deleted"});
+    }
+
+    const me = conversation.participants.find(
+      (p) =>
+        p.userId.toString() ===
+        req.user._id.toString()
+    );
+
+    if (!me || me.role !== "owner") {
+      return res.status(403).json({
+        message: "Only owner can delete conversation",
+      });
+    }
+    await Conversation.findByIdAndDelete(conversationId);
+    await Message.deleteMany({conversationId});
+
+    return res.status(200).json({message: "Conversation deleted"});
+
+  } catch (error) {
+    console.error("Error deleting conversation:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
 }
