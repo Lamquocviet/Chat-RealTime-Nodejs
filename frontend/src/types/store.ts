@@ -69,6 +69,10 @@ export interface ChatState {
     name: string,
     memberIds: string[],
   ) => Promise<void>;
+  addMembersToGroup: (
+  conversationId: string,
+  memberIds: string[]
+) => Promise<void>;
 }
 
 export interface SocketState {

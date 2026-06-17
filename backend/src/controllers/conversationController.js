@@ -297,7 +297,7 @@ export const addMembers = async (req, res) => {
   const { memberIds } = req.body;
 
   try {
-    const conversation = await conversation.findById(conversationId);
+    const conversation = await Conversation.findById(conversationId);
 
     if (!conversation) {
       return res.status(404).json({ message: "Conversation not found" });
@@ -316,23 +316,26 @@ export const addMembers = async (req, res) => {
         message: "You are not a member of this group",
       });
     }
-    const exists =
-      conversation.participants.some(
-        (p) =>
-          p.userId.toString() ===
-          memberId
-      );
-
-    if (exists) {
-      return res.status(400).json({
-        message: "User already in group",
+    if (!["owner", "admin"].includes(me.role)) {
+      return res.status(403).json({
+        message:
+          "Only owner/admin can add members",
       });
     }
+    for (const memberId of memberIds) {
+      const exists = conversation.participants.some(
+        (p) =>
+          p.userId.toString() === memberId.toString()
+      );
 
-    conversation.participants.push({
-      userId: memberId,
-      role: "member",
-    });
+      if (!exists) {
+        conversation.participants.push({
+          userId: memberId,
+          role: "member",
+        });
+      }
+    }
+
 
     await conversation.save();
 

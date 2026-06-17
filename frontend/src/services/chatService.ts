@@ -64,4 +64,11 @@ export const chatService = {
     const res = await api.post("/conversations", { type, name, memberIds });
     return res.data.conversation;
   },
+  //them thanh vien vao group
+  async addGroupMembers(conversationId: string, memberIds: string[]) {
+    const res = await api.post(`/conversations/${conversationId}/members`, {
+      memberIds,
+    });
+    return res.data;
+  }
 };

@@ -9,7 +9,7 @@ const participantSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["owner", "member"],
+      enum: ["owner", "admin", "member"],
       default: "member",
     },
     joinedAt: {
@@ -98,7 +98,7 @@ const conversationSchema = new mongoose.Schema(
 );
 
 conversationSchema.index({
-  "participant.userId": 1,
+  "participants.userId": 1,
   lastMessageAt: -1,
 });
 

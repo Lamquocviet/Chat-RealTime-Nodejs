@@ -2,7 +2,9 @@ export interface Participant {
   _id: string;
   displayName: string;
   avatarUrl?: string | null;
+  role: "owner" | "admin" | "member";
   joinedAt: string;
+
 }
 
 export interface SeenUser {

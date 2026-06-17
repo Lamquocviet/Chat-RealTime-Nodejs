@@ -10,9 +10,10 @@ import GroupChatAvatar from "./GroupChatAvatar";
 import { useSocketStore } from "@/stores/useSocketStore";
 import ViewUserProfileDialog from "@/components/profile/ViewUserProfileDialog";
 import { useCallStore } from "@/stores/useCallStore";
-import { Phone, Video } from "lucide-react";
+import { Phone, Video, PanelLeftClose, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import GroupMemberSheet from "./GroupMemberSheet";
 
 const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
   const { conversations, activeConversationId } = useChatStore();
@@ -20,6 +21,7 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
   const { onlineUsers } = useSocketStore();
   const { initializeCall, callState } = useCallStore();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [memberListOpen, setMemberListOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   let otherUser: Participant | null = null;
@@ -62,11 +64,15 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     }
 
     try {
-      await initializeCall(otherUser._id, {
-        _id: otherUser._id,
-        displayName: otherUser.displayName,
-        avatarUrl: otherUser.avatarUrl,
-      }, "video");
+      await initializeCall(
+        otherUser._id,
+        {
+          _id: otherUser._id,
+          displayName: otherUser.displayName,
+          avatarUrl: otherUser.avatarUrl,
+        },
+        "video",
+      );
       toast.success("Đang gọi video đến " + otherUser.displayName);
     } catch (error) {
       console.error("Lỗi khi khởi tạo cuộc gọi video:", error);
@@ -88,11 +94,15 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     }
 
     try {
-      await initializeCall(otherUser._id, {
-        _id: otherUser._id,
-        displayName: otherUser.displayName,
-        avatarUrl: otherUser.avatarUrl,
-      }, "audio");
+      await initializeCall(
+        otherUser._id,
+        {
+          _id: otherUser._id,
+          displayName: otherUser.displayName,
+          avatarUrl: otherUser.avatarUrl,
+        },
+        "audio",
+      );
       toast.success("Đang gọi thoại đến " + otherUser.displayName);
     } catch (error) {
       console.error("Lỗi khi khởi tạo cuộc gọi thoại:", error);
@@ -168,16 +178,38 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
                   !onlineUsers.includes(otherUser?._id ?? "") ||
                   callState.status !== "idle"
                 }
-                
                 className="text-muted-foreground hover:text-foreground cursor-pointer"
               >
-                <Video className="size-7 cursor-pointer"  />
+                <Video className="size-7 cursor-pointer" />
+              </Button>
+            </div>
+          )}
+
+          {chat.type === "group" && (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon">
+                <UserRound className="size-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMemberListOpen(true)}
+              >
+                <PanelLeftClose className="size-5" />
               </Button>
             </div>
           )}
         </div>
       </header>
-
+      {/* xem danh sách thành viên */}
+      {chat.type === "group" && (
+        <GroupMemberSheet
+          open={memberListOpen}
+          onOpenChange={setMemberListOpen}
+          participants={chat.participants}
+        />
+      )}
+      {/* Xem profile user */}
       {selectedUserId && (
         <ViewUserProfileDialog
           open={profileOpen}
