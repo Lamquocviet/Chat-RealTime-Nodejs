@@ -69,10 +69,18 @@ export interface ChatState {
     name: string,
     memberIds: string[],
   ) => Promise<void>;
+  // them thanh vien vao nhom
   addMembersToGroup: (
   conversationId: string,
   memberIds: string[]
 ) => Promise<void>;
+  // giai tan nhom
+  deleteGroup: (conversationId: string) => Promise<void>;
+  // roi nhom
+  leaveGroup: (conversationId: string) => Promise<void>;
+  // xoa thanh vien khoi nhom
+  removeGroupMember: (conversationId: string, memberId: string) => Promise<void>;
+  
 }
 
 export interface SocketState {

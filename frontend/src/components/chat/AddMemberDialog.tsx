@@ -84,7 +84,7 @@ export default function AddMemberDialog({
               <label
                 key={user._id}
                 className={`flex items-center gap-3 px-6 py-3
-      ${alreadyInGroup ? "opacity-60" : "cursor-pointer hover:bg-muted"}`}
+                  ${alreadyInGroup ? "opacity-60" : "cursor-pointer hover:bg-muted"}`}
               >
                 <input
                   type="checkbox"

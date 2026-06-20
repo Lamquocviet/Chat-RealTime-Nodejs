@@ -297,11 +297,8 @@ export const addMembers = async (req, res) => {
   const { memberIds } = req.body;
 
   try {
-    // Validate input
-    if (
-      !memberIds ||
-      !Array.isArray(memberIds) ||
-      memberIds.length === 0
+
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0
     ) {
       return res.status(400).json({
         message: "memberIds is required",
@@ -313,9 +310,7 @@ export const addMembers = async (req, res) => {
     );
 
     if (!conversation) {
-      return res.status(404).json({
-        message: "Conversation not found",
-      });
+      return res.status(404).json({message: "Conversation not found",});        
     }
 
     if (conversation.type !== "group") {
@@ -358,8 +353,7 @@ export const addMembers = async (req, res) => {
 
       const exists = conversation.participants.some(
         (p) =>
-          p.userId.toString() ===
-          memberId.toString()
+          p.userId.toString() === memberId.toString()
       );
 
       if (!exists) {
@@ -434,16 +428,31 @@ export const removeMember = async (req, res) => {
       });
     }
 
-    conversation.participants =
-      conversation.participants.filter(
-        (p) =>
-          p.userId.toString() !== memberId
-      );
+    conversation.participants = conversation.participants.filter(
+      (p) => p.userId.toString() !== memberId
+    );
 
     await conversation.save();
 
+    await conversation.populate({
+      path: "participants.userId",
+      select: "displayName avatarUrl",
+    });
+
+    const participants = conversation.participants.map((p) => ({
+      _id: p.userId._id,
+      displayName: p.userId.displayName,
+      avatarUrl: p.userId.avatarUrl,
+      role: p.role,
+      joinedAt: p.joinedAt,
+    }));
+
     return res.status(200).json({
       message: "Member removed",
+      conversation: {
+        ...conversation.toObject(),
+        participants,
+      },
     });
   } catch (error) {
     return res.status(500).json({
@@ -458,10 +467,9 @@ export const leaveGroup = async (req, res) => {
 
     const myId = req.user._id;
 
-    const conversation =
-      await Conversation.findById(
-        conversationId
-      );
+    const conversation = await Conversation.findById(
+      conversationId
+    );
 
     if (!conversation) {
       return res.status(404).json({
@@ -488,32 +496,69 @@ export const leaveGroup = async (req, res) => {
     }
 
     // owner
-    if (me.role === "owner") {
-      const nextOwner =
-        conversation.participants.find(
-          (p) =>
-            p.userId.toString() !==
-            myId.toString()
+    if (me.role === "owner" && conversation.participants.length === 1) {
+      await Conversation.findByIdAndDelete(conversationId);
+      await Message.deleteMany({conversationId});
+
+      return res.status(200).json({
+        message:
+          "Group deleted because owner left",
+        deleted: true,
+        conversationId,
+      });
+    }
+     // Nếu owner rời nhóm -> chuyển quyền
+     if (me.role === "owner") {
+      let nextOwner = conversation.participants.find(
+        (p) =>
+          p.userId.toString() !== myId.toString() &&
+          p.role === "admin"
+      );
+
+      if (!nextOwner) {
+        nextOwner = conversation.participants.find(
+          (p) => p.userId.toString() !== myId.toString()
         );
+      }
 
       if (nextOwner) {
         nextOwner.role = "owner";
       }
-    }
+     }
 
-    conversation.participants =
-      conversation.participants.filter(
-        (p) =>
-          p.userId.toString() !==
-          myId.toString()
-      );
+     // Xóa bản thân khỏi nhóm
+     conversation.participants = conversation.participants.filter((p) => p.userId.toString() !== myId.toString());
 
-    await conversation.save();
+     await conversation.save();
+
+     await conversation.populate({
+      path: "participants.userId",
+      select: "displayName avatarUrl",
+
+     });
+
+     const participants =
+      conversation.participants.map((p) => ({
+        _id: p.userId._id,
+        displayName:
+          p.userId.displayName,
+        avatarUrl:
+          p.userId.avatarUrl,
+        role: p.role,
+        joinedAt: p.joinedAt,
+      }));
 
     return res.status(200).json({
-      message: "Left group",
+      message: "Left group successfully",
+      deleted: false,
+      conversation: {
+        ...conversation.toObject(),
+        participants,
+      },
     });
+    
   } catch (error) {
+    console.error("Error leaving group:", error);
     return res.status(500).json({
       message: "Server error",
     });

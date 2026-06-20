@@ -4,14 +4,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {useState} from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "./UserAvatar";
 import type { Participant } from "@/types/chat";
 import { UserPlus, LogOut, Trash2, Shield, Crown, Eye } from "lucide-react";
 import AddMemberDialog from "./AddMemberDialog";
 import { useChatStore } from "@/stores/useChatStore";
-
+import { useAuthStore } from "@/stores/useAuthStore";
 
 interface GroupMemberSheetProps {
   open: boolean;
@@ -26,13 +26,16 @@ const GroupMemberSheet = ({
   participants,
   conversationId,
 }: GroupMemberSheetProps) => {
+  const { user } = useAuthStore();
+  const { deleteGroup, leaveGroup, removeGroupMember } = useChatStore();
 
+  
   const [openAddMember, setOpenAddMember] = useState(false);
 
+  const me = participants.find((p) => p._id === user?._id);
 
-  // TODO: thay bằng dữ liệu thật
-  const isOwner = true;
-  const isAdmin = false;
+  const isOwner = me?.role === "owner";
+  const isAdmin = me?.role === "admin";
 
   const getRoleLabel = (role?: string) => {
     switch (role) {
@@ -55,6 +58,52 @@ const GroupMemberSheet = ({
         return null;
     }
   };
+  const canRemoveMember = (
+  member: Participant
+) => {
+  // Không tự kick mình
+  if (member._id === user?._id) {
+    return false;
+  }
+
+  return isOwner;
+};
+
+  const handleRemoveMember = async (
+  member: Participant
+) => {
+  const ok = window.confirm(
+    `Xóa ${member.displayName} khỏi nhóm?`
+  );
+
+  if (!ok) return;
+
+  await removeGroupMember(
+    conversationId,
+    member._id
+  );
+};
+
+  const handleDeleteGroup = async () => {
+    const ok = window.confirm("Bạn có chắc muốn giải tán nhóm không?");
+
+    if (!ok) return;
+
+    await deleteGroup(conversationId);
+
+    onOpenChange(false);
+  };
+  const handleLeaveGroup = async () => {
+  const ok = window.confirm(
+    "Bạn có chắc muốn rời nhóm?"
+  );
+
+  if (!ok) return;
+
+  await leaveGroup(conversationId);
+
+  onOpenChange(false);
+};
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -72,19 +121,31 @@ const GroupMemberSheet = ({
           {/* Group Actions */}
           <div className="border-b p-4 space-y-2">
             {(isOwner || isAdmin) && (
-              <Button className="w-full justify-start" variant="outline" onClick={() => setOpenAddMember(true)}>
+              <Button
+                className="w-full justify-start"
+                variant="outline"
+                onClick={() => setOpenAddMember(true)}
+              >
                 <UserPlus className="mr-2 size-4" />
                 Thêm thành viên
               </Button>
             )}
 
             {isOwner ? (
-              <Button className="w-full justify-start" variant="destructive">
+              <Button
+                className="w-full justify-start cursor-pointer"
+                variant="destructive"
+                onClick={handleDeleteGroup}
+              >
                 <Trash2 className="mr-2 size-4" />
                 Giải tán nhóm
               </Button>
             ) : (
-              <Button className="w-full justify-start" variant="destructive">
+              <Button
+                className="w-full justify-start cursor-pointer"
+                variant="destructive"
+                onClick={handleLeaveGroup}
+              >
                 <LogOut className="mr-2 size-4" />
                 Rời nhóm
               </Button>
@@ -109,7 +170,7 @@ const GroupMemberSheet = ({
                         <UserAvatar
                           type="sidebar"
                           name={member.displayName}
-                          avatarUrl={member.avatarUrl}
+                          avatarUrl={member.avatarUrl ?? undefined}
                         />
 
                         <div>
@@ -124,8 +185,36 @@ const GroupMemberSheet = ({
                           </p>
                         </div>
                       </div>
-
                       <div className="flex items-center gap-2">
+  {!isFriend && (
+    <Button
+      size="sm"
+      variant="secondary"
+    >
+      Kết bạn
+    </Button>
+  )}
+
+  <Button
+    size="icon"
+    variant="outline"
+  >
+    <Eye className="size-4" />
+  </Button>
+
+  {canRemoveMember(member) && (
+    <Button
+      size="icon"
+      variant="destructive"
+      onClick={() =>
+        handleRemoveMember(member)
+      }
+    >
+      <Trash2 className="size-4" />
+    </Button>
+  )}
+</div>
+                      {/* <div className="flex items-center gap-2">
                         {!isFriend && (
                           <Button size="sm" variant="secondary">
                             Kết bạn
@@ -135,7 +224,7 @@ const GroupMemberSheet = ({
                         <Button size="icon" variant="outline">
                           <Eye className="size-4" />
                         </Button>
-                      </div>
+                      </div> */}
                     </div>
                   );
                 })}
@@ -144,14 +233,13 @@ const GroupMemberSheet = ({
           </div>
         </div>
       </SheetContent>
-       <AddMemberDialog
-      open={openAddMember}
-      onOpenChange={setOpenAddMember}
-      participants={participants}
-      conversationId={conversationId}
-    />
+      <AddMemberDialog
+        open={openAddMember}
+        onOpenChange={setOpenAddMember}
+        participants={participants}
+        conversationId={conversationId}
+      />
     </Sheet>
-   
   );
 };
 

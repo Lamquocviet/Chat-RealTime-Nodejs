@@ -70,5 +70,23 @@ export const chatService = {
       memberIds,
     });
     return res.data;
-  }
+  },
+  // Giai tan nhom
+  async deleteGroup(conversationId: string) 
+  {
+    const res = await api.delete(`/conversations/${conversationId}`);
+    return res.data;
+  },
+  // Roi nhom
+  async leaveGroup(conversationId: string) {
+    const res = await api.patch(`/conversations/${conversationId}/leave`);
+    return res.data;
+  },
+  // xoa thanh vien khoi nhom
+  async removeGroupMember(conversationId: string, memberId: string) {
+    const res = await api.delete(
+      `/conversations/${conversationId}/members/${memberId}`
+    );
+    return res.data;
+  },
 };

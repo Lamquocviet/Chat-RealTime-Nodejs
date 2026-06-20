@@ -18,7 +18,7 @@ const router = express.Router();
 router.post("/", checkFriendship, createConversation);
 router.post("/:conversationId/members", addMembers);
 router.delete("/:conversationId/members/:memberId", removeMember);
-router.delete("/:conversationId/leave", leaveGroup);
+router.patch("/:conversationId/leave", leaveGroup);
 router.delete("/:conversationId", deleteConversation);
 router.get("/", getConversations);
 router.get("/:conversationId/members", getGroupMembers);

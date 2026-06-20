@@ -236,39 +236,99 @@ export const useChatStore = create<ChatState>()(
           set({ loading: false });
         }
       },
-      addMembersToGroup: async (
-  conversationId,
-  memberIds
-) => {
-  try {
-    const { conversation } =
-      await chatService.addGroupMembers(
-        conversationId,
-        memberIds
-      );
+      addMembersToGroup: async (conversationId, memberIds) => {
+        try {
+          const { conversation } = await chatService.addGroupMembers(
+            conversationId,
+            memberIds,
+          );
 
-    set((state) => ({
-      conversations: state.conversations.map((c) =>
-        c._id === conversation._id
-          ? conversation
-          : c
-      ),
-    }));
-  } catch (error) {
-    console.error(
-      "Lỗi thêm thành viên:",
-      error
-    );
-  }
-},
-      // addMembersToGroup: async (conversationId, memberIds) => {
-      //   try {
-      //     await chatService.addGroupMembers(conversationId, memberIds);
-      //     await get().fetchConversations();
-      //   } catch (error) {
-      //     console.error("Lỗi khi thêm thành viên:", error);
-      //   }
-      // },
+          set((state) => ({
+            conversations: state.conversations.map((c) =>
+              c._id === conversation._id ? conversation : c,
+            ),
+          }));
+        } catch (error) {
+          console.error("Lỗi thêm thành viên:", error);
+        }
+      },
+      deleteGroup: async (conversationId) => {
+        try {
+          console.log("Deleting group:", conversationId);
+          await chatService.deleteGroup(conversationId);
+          set((state) => {
+            const newMessages = { ...state.messages };
+            delete newMessages[conversationId];
+
+            return {
+              conversations: state.conversations.filter(
+                (c) => c._id !== conversationId,
+              ),
+              messages: newMessages,
+              activeConversationId:
+                state.activeConversationId === conversationId
+                  ? null
+                  : state.activeConversationId,
+            };
+          });
+        } catch (error) {
+          console.error("Lỗi khi giải tán nhóm:", error);
+        }
+      },
+      leaveGroup: async (conversationId) => {
+        try {
+          await chatService.leaveGroup(conversationId);
+
+          set((state) => {
+            const newMessages = { ...state.messages };
+            delete newMessages[conversationId];
+
+            return {
+              conversations: state.conversations.filter(
+                (c) => c._id !== conversationId,
+              ),
+              messages: newMessages,
+              activeConversationId:
+                state.activeConversationId === conversationId
+                  ? null
+                  : state.activeConversationId,
+            };
+          });
+        } catch (error) {
+          console.error("Lỗi khi rời nhóm:", error);
+        }
+      },
+      removeGroupMember: async (conversationId, memberId) => {
+        try {
+          const response = await chatService.removeGroupMember(
+            conversationId,
+            memberId,
+          );
+
+          const updatedConversation = response?.conversation;
+
+          set((state) => ({
+            conversations: updatedConversation
+              ? state.conversations.map((c) =>
+                  c._id === updatedConversation._id
+                    ? updatedConversation
+                    : c,
+                )
+              : state.conversations.map((c) =>
+                  c._id === conversationId
+                    ? {
+                        ...c,
+                        participants: c.participants.filter(
+                          (p) => p._id !== memberId,
+                        ),
+                      }
+                    : c,
+                ),
+          }));
+        } catch (error) {
+          console.error("Lỗi xóa thành viên:", error);
+        }
+      },
     }),
     {
       name: "chat-storage",
