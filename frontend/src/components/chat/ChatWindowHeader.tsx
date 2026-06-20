@@ -207,6 +207,7 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
           open={memberListOpen}
           onOpenChange={setMemberListOpen}
           participants={chat.participants}
+          conversationId={chat._id}
         />
       )}
       {/* Xem profile user */}

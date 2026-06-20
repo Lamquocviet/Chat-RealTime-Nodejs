@@ -19,16 +19,16 @@ const CreateNewChat = () => {
       >
         <Dialog>
           <DialogTrigger>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 cursor-pointer">
               <div className="size-8 bg-gradient-chat rounded-full flex items-center justify-center group-hover/card:scale-110 transition-bounce">
                 <MessageCircle className="size-4 text-white" />
               </div>
-              <span className="text-sm font-medium capitalize">
+              <span className="text-sm font-medium capitalize ">
                 gửi tin nhắn mới
               </span>
             </div>
           </DialogTrigger>
-
+     
           <FriendListModal />
         </Dialog>
       </Card>

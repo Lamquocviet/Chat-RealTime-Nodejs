@@ -240,19 +240,26 @@ export const useChatStore = create<ChatState>()(
   conversationId,
   memberIds
 ) => {
-  const { conversation } =
-    await chatService.addGroupMembers(
-      conversationId,
-      memberIds
-    );
+  try {
+    const { conversation } =
+      await chatService.addGroupMembers(
+        conversationId,
+        memberIds
+      );
 
-  set((state) => ({
-    conversations: state.conversations.map((c) =>
-      c._id === conversationId
-        ? conversation
-        : c
-    ),
-  }));
+    set((state) => ({
+      conversations: state.conversations.map((c) =>
+        c._id === conversation._id
+          ? conversation
+          : c
+      ),
+    }));
+  } catch (error) {
+    console.error(
+      "Lỗi thêm thành viên:",
+      error
+    );
+  }
 },
       // addMembersToGroup: async (conversationId, memberIds) => {
       //   try {

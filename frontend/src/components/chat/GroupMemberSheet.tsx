@@ -4,22 +4,32 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {useState} from "react";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "./UserAvatar";
 import type { Participant } from "@/types/chat";
 import { UserPlus, LogOut, Trash2, Shield, Crown, Eye } from "lucide-react";
+import AddMemberDialog from "./AddMemberDialog";
+import { useChatStore } from "@/stores/useChatStore";
+
 
 interface GroupMemberSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   participants: Participant[];
+  conversationId: string;
 }
 
 const GroupMemberSheet = ({
   open,
   onOpenChange,
   participants,
+  conversationId,
 }: GroupMemberSheetProps) => {
+
+  const [openAddMember, setOpenAddMember] = useState(false);
+
+
   // TODO: thay bằng dữ liệu thật
   const isOwner = true;
   const isAdmin = false;
@@ -62,7 +72,7 @@ const GroupMemberSheet = ({
           {/* Group Actions */}
           <div className="border-b p-4 space-y-2">
             {(isOwner || isAdmin) && (
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start" variant="outline" onClick={() => setOpenAddMember(true)}>
                 <UserPlus className="mr-2 size-4" />
                 Thêm thành viên
               </Button>
@@ -134,7 +144,14 @@ const GroupMemberSheet = ({
           </div>
         </div>
       </SheetContent>
+       <AddMemberDialog
+      open={openAddMember}
+      onOpenChange={setOpenAddMember}
+      participants={participants}
+      conversationId={conversationId}
+    />
     </Sheet>
+   
   );
 };
 

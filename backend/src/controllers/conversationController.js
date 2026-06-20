@@ -297,18 +297,38 @@ export const addMembers = async (req, res) => {
   const { memberIds } = req.body;
 
   try {
-    const conversation = await Conversation.findById(conversationId);
+    // Validate input
+    if (
+      !memberIds ||
+      !Array.isArray(memberIds) ||
+      memberIds.length === 0
+    ) {
+      return res.status(400).json({
+        message: "memberIds is required",
+      });
+    }
+
+    const conversation = await Conversation.findById(
+      conversationId
+    );
 
     if (!conversation) {
-      return res.status(404).json({ message: "Conversation not found" });
+      return res.status(404).json({
+        message: "Conversation not found",
+      });
     }
+
     if (conversation.type !== "group") {
-      return res
-        .status(400)
-        .json({ message: "Only group conversations can add members" });
+      return res.status(400).json({
+        message:
+          "Only group conversations can add members",
+      });
     }
+
     const me = conversation.participants.find(
-      (p) => p.userId.toString() === req.user._id.toString(),
+      (p) =>
+        p.userId.toString() ===
+        req.user._id.toString()
     );
 
     if (!me) {
@@ -316,16 +336,30 @@ export const addMembers = async (req, res) => {
         message: "You are not a member of this group",
       });
     }
+
     if (!["owner", "admin"].includes(me.role)) {
       return res.status(403).json({
         message:
           "Only owner/admin can add members",
       });
     }
-    for (const memberId of memberIds) {
+
+    // Loại bỏ trùng lặp trong request
+    const uniqueMemberIds = [...new Set(memberIds)];
+
+    for (const memberId of uniqueMemberIds) {
+      // Không cho tự thêm chính mình
+      if (
+        memberId.toString() ===
+        req.user._id.toString()
+      ) {
+        continue;
+      }
+
       const exists = conversation.participants.some(
         (p) =>
-          p.userId.toString() === memberId.toString()
+          p.userId.toString() ===
+          memberId.toString()
       );
 
       if (!exists) {
@@ -336,15 +370,36 @@ export const addMembers = async (req, res) => {
       }
     }
 
-
     await conversation.save();
 
-    return res.status(200).json({
-      message: "Member added",
+    await conversation.populate({
+      path: "participants.userId",
+      select: "displayName avatarUrl",
     });
+
+    const participants = conversation.participants.map(
+      (p) => ({
+        _id: p.userId._id,
+        displayName: p.userId.displayName,
+        avatarUrl: p.userId.avatarUrl,
+        role: p.role,
+        joinedAt: p.joinedAt,
+      })
+    );
+
+    return res.status(200).json({
+  message: "Members added successfully",
+  conversation: {
+    ...conversation.toObject(),
+    participants,
+  },
+});
   } catch (error) {
-    console.error("error adding members:", error);
-    return res.status(500).json({ message: "Server error" });
+    console.error("Error adding members:", error);
+
+    return res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 // Xóa thành viên khỏi nhóm chat
