@@ -10,7 +10,7 @@ import GroupChatAvatar from "./GroupChatAvatar";
 import { useSocketStore } from "@/stores/useSocketStore";
 import ViewUserProfileDialog from "@/components/profile/ViewUserProfileDialog";
 import { useCallStore } from "@/stores/useCallStore";
-import { Phone, Video, PanelLeftClose, UserRound } from "lucide-react";
+import { Video, PanelLeftClose, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import GroupMemberSheet from "./GroupMemberSheet";
@@ -77,36 +77,6 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     } catch (error) {
       console.error("Lỗi khi khởi tạo cuộc gọi video:", error);
       toast.error("Lỗi khi bắt đầu cuộc gọi video");
-    }
-  };
-
-  const handleAudioCall = async () => {
-    if (!otherUser) return;
-
-    if (callState.status !== "idle") {
-      toast.error("Có cuộc gọi đang diễn ra");
-      return;
-    }
-
-    if (!onlineUsers.includes(otherUser._id)) {
-      toast.error("Người dùng đang offline");
-      return;
-    }
-
-    try {
-      await initializeCall(
-        otherUser._id,
-        {
-          _id: otherUser._id,
-          displayName: otherUser.displayName,
-          avatarUrl: otherUser.avatarUrl,
-        },
-        "audio",
-      );
-      toast.success("Đang gọi thoại đến " + otherUser.displayName);
-    } catch (error) {
-      console.error("Lỗi khi khởi tạo cuộc gọi thoại:", error);
-      toast.error("Lỗi khi bắt đầu cuộc gọi thoại");
     }
   };
 

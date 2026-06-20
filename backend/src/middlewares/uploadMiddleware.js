@@ -4,7 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 export const upload = multer({
     storage: multer.memoryStorage(),
     limits:{
-        fileSize: 5 * 1024 * 1024 // Giới hạn kích thước tệp là 5MB
+        fileSize: 30 * 1024 * 1024 // Giới hạn kích thước tệp là 10MB
     }
 })
 
@@ -29,3 +29,23 @@ export const uploadImageFromBuffer = (buffer, options) => {
     uploadStream.end(buffer);
   });
 };
+
+export const uploadFileFromBuffer = (buffer, options) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "message_chat/files",
+        resource_type: "auto",
+        ...options,
+      },
+      (error, result) => {
+        if(error){
+          reject(error);
+        }else {
+          resolve(result);
+        }
+      }
+    );
+    uploadStream.end(buffer);
+  });
+}

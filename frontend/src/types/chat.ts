@@ -18,9 +18,16 @@ export interface Group {
   createdBy: string;
 }
 
+export interface Attachment {
+  url: string;
+  filename: string;
+  mimetype: string;
+  size: number;
+}
+
 export interface LastMessage {
   _id: string;
-  content: string;
+  content: string | null;
   createdAt: string;
   sender: {
     _id: string;
@@ -51,6 +58,8 @@ export interface Message {
   conversationId: string;
   senderId: string;
   content: string | null;
+  type: "text" | "image" | "file";
+  attachments: Attachment[];
   imgUrl?: string | null;
   updatedAt?: string | null;
   createdAt: string;

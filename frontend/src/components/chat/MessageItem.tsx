@@ -21,6 +21,10 @@ const MessageItem = ({
 }: MessageItemProps) => {
   const prev = index + 1 < messages.length ? messages[index + 1] : undefined;
 
+  const attachments = message.attachments ?? [];
+  const isImageMessage = message.type === "image";
+  const isFileMessage = message.type === "file";
+
   const isShowTime =
     index === 0 ||
     new Date(message.createdAt).getTime() -
@@ -74,7 +78,38 @@ const MessageItem = ({
               message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
             )}
           >
-            <p className="text-sm leading-relaxed break-words">{message.content}</p>
+            {isImageMessage && attachments.length > 0 && (
+              <div className="space-y-2">
+                {attachments.map((attachment) => (
+                  <img
+                    key={attachment.url}
+                    src={attachment.url}
+                    alt={attachment.filename}
+                    className="max-w-full rounded-md object-cover"
+                  />
+                ))}
+              </div>
+            )}
+
+            {isFileMessage && attachments.length > 0 && (
+              <div className="space-y-2">
+                {attachments.map((attachment) => (
+                  <a
+                    key={attachment.url}
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm hover:bg-background"
+                  >
+                    {attachment.filename}
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {message.content && (
+              <p className="text-sm leading-relaxed break-words">{message.content}</p>
+            )}
           </Card>
 
           {/* seen/ delivered */}

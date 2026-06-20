@@ -21,35 +21,104 @@ export const chatService = {
 
     return { messages: res.data.messages, cursor: res.data.nextCursor };
   },
-
   async sendDirectMessage(
-    recipientId: string,
-    content: string = "",
-    imgUrl?: string,
-    conversationId?: string
-  ) {
-    const res = await api.post("/messages/direct", {
-      recipientId,
-      content,
-      imgUrl,
-      conversationId,
-    });
+  recipientId: string,
+  content: string,
+  files?: File[],
+  conversationId?: string
+) {
+  const formData = new FormData();
 
-    return res.data.message;
-  },
+  formData.append("recipientId", recipientId);
+  formData.append("content", content);
 
-  async sendGroupMessage(
-    conversationId: string,
-    content: string = "",
-    imgUrl?: string
-  ) {
-    const res = await api.post("/messages/group", {
-      conversationId,
-      content,
-      imgUrl,
-    });
-    return res.data.message;
-  },
+  if (conversationId) {
+    formData.append(
+      "conversationId",
+      conversationId
+    );
+  }
+
+  files?.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  const res = await api.post(
+    "/messages/direct",
+    formData,
+    {
+      headers: {
+        "Content-Type":
+          "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data.message;
+},
+async sendGroupMessage(
+  conversationId: string,
+  content: string,
+  files?: File[]
+) {
+  const formData = new FormData();
+
+  formData.append(
+    "conversationId",
+    conversationId
+  );
+
+  formData.append(
+    "content",
+    content
+  );
+
+  files?.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  const res = await api.post(
+    "/messages/group",
+    formData,
+    {
+      headers: {
+        "Content-Type":
+          "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data.message;
+},
+
+  // async sendDirectMessage(
+  //   recipientId: string,
+  //   content: string = "",
+  //   imgUrl?: string,
+  //   conversationId?: string
+  // ) {
+  //   const res = await api.post("/messages/direct", {
+  //     recipientId,
+  //     content,
+  //     imgUrl,
+  //     conversationId,
+  //   });
+
+  //   return res.data.message;
+  // },
+
+  // async sendGroupMessage(
+  //   conversationId: string,
+  //   content: string = "",
+  //   imgUrl?: string
+  // ) {
+  //   const res = await api.post("/messages/group", {
+  //     conversationId,
+  //     content,
+  //     imgUrl,
+  //   });
+  //   return res.data.message;
+  // },
 
   async markAsSeen(conversationId: string) {
     const res = await api.patch(`/conversations/${conversationId}/seen`);
