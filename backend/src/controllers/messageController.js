@@ -21,10 +21,6 @@ export const sendDirectMessage = async (req, res) => {
     if(!content.trim() && attachments.length === 0) {
       return res.status(400).json({message: "Thiếu nội dung"});
     }
-
-    
-
-
     if (conversationId) {
       conversation = await Conversation.findById(conversationId);
     }
