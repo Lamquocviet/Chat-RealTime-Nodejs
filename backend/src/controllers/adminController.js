@@ -1,4 +1,8 @@
 import User from "../models/User.js";
+import AuditLog from "../models/AuditLog.js";
+import { onlineUsers } from "../socket/index.js";
+import { createAuditLog } from "../utils/auditHelper.js";
+
 
 // xem danh sách user
 export const getAllUsers = async (req, res) => {
@@ -20,13 +24,20 @@ export const getAllUsers = async (req, res) => {
       User.countDocuments(),
     ]);
 
+    const usersWithOnlineStatus = users.map(
+      (user) => ({
+        ... user,
+        isOnline: onlineUsers.has(user._id.toString())
+      })
+    )
+
     return res.status(200).json({
       success: true,
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      users,
+      users: usersWithOnlineStatus,
     });
   } catch (error) {
     console.error("Get all users error", error);
@@ -54,6 +65,18 @@ export const deleteUser = async (req, res) => {
         message: "User not found",
       });
     }
+
+    await createAuditLog({
+      actor: req.user._id,
+      action: "DELETE_USER",
+      targetType: "user",
+      targetId: deleteUser._id,
+      details: {
+        username: deleteUser.username,
+        email: deleteUser.email,
+      },
+      ipAddress: req.ip,
+    });
 
     return res.status(200).json({
       message: "User deleted successfully",
@@ -84,8 +107,21 @@ export const promoteToAdmin = async (req, res) => {
       });
     }
 
+    const previousRole = user.role;
     user.role = "admin";
     await user.save();
+
+    await createAuditLog({
+      actor: req.user._id,
+      action: "CHANGE_ROLE",
+      targetType: "user",
+      targetId: user._id,
+      details: {
+        from: previousRole,
+        to: user.role,
+      },
+      ipAddress: req.ip,
+    });
 
     return res.status(200).json({
       success: true,
@@ -126,8 +162,21 @@ export const demoteToAdmin = async (req, res) => {
       });
     }
 
+    const previousRole = user.role;
     user.role = "user";
     await user.save();
+
+    await createAuditLog({
+      actor: req.user._id,
+      action: "CHANGE_ROLE",
+      targetType: "user",
+      targetId: user._id,
+      details: {
+        from: previousRole,
+        to: user.role,
+      },
+      ipAddress: req.ip,
+    });
 
     return res.status(200).json({
       success: true,
@@ -164,6 +213,18 @@ export const blockUser = async (req, res) => {
     user.status = "blocked";
     await user.save();
 
+    await createAuditLog({
+      actor: req.user._id,
+      action: "BLOCK_USER",
+      targetType: "user",
+      targetId: user._id,
+      details: {
+        username: user.username,
+        status: user.status,
+      },
+      ipAddress: req.ip,
+    });
+
     return res.status(200).json({
       success: true,
       message: "User blocked successfully",
@@ -194,6 +255,18 @@ export const activeUser = async (req, res) => {
     user.status = "active";
     await user.save();
 
+    await createAuditLog({
+      actor: req.user._id,
+      action: "UNBLOCK_USER",
+      targetType: "user",
+      targetId: user._id,
+      details: {
+        username: user.username,
+        status: user.status,
+      },
+      ipAddress: req.ip,
+    });
+
     return res.status(200).json({
       success: true,
       message: "User active successfully",
@@ -206,4 +279,177 @@ export const activeUser = async (req, res) => {
       message: "Server error",
     });
   }
+};
+
+// Thống kê
+export const getUserStats = async (req, res) => {
+  try {
+		const today = new Date();
+		today.setHours(0,0,0,0);
+
+		const firstDayOfMonth = new Date (
+			today.getFullYear(),
+			today.getMonth(),
+			1
+		);
+
+		const [totalUsers, activeUsers, blockedUsers, newUsersToday, newUsersMonth] = await Promise.all([
+			User.countDocuments(),
+			User.countDocuments({status: "active"}),
+			User.countDocuments({status: "blocked"}),
+			User.countDocuments({
+				createdAt: {$gte: today}
+			}),
+			User.countDocuments({
+        createdAt: {
+          $gte: firstDayOfMonth,
+        },
+      }),
+
+		]);
+		return res.status(200).json({
+      totalUsers,
+      activeUsers,
+      blockedUsers,
+      onlineUsers: onlineUsers.size,
+      newUsersToday,
+      // newUsersThisMonth,
+    });
+  } catch (error) {
+    console.error("Get user stats error:", error);
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
+// Audit-log
+export const getAuditLogs = async(req, res) => {
+
+  try {
+
+
+    const page =
+      Number(req.query.page) || 1;
+
+
+    const limit =
+      Number(req.query.limit) || 20;
+
+
+
+    const skip =
+      (page - 1) * limit;
+
+
+
+    const {
+      action,
+      targetType,
+      actor
+    } = req.query;
+
+
+
+    const filter = {};
+
+
+
+    if(action){
+
+      filter.action = action;
+
+    }
+
+
+
+    if(targetType){
+
+      filter.targetType = targetType;
+
+    }
+
+
+
+    if(actor){
+
+      filter.actor = actor;
+
+    }
+
+
+
+
+    const [logs, total] = await Promise.all([
+
+
+      AuditLog.find(filter)
+
+        .populate(
+          "actor",
+          "displayName username avatarUrl"
+        )
+
+        .sort({
+          createdAt:-1
+        })
+
+        .skip(skip)
+
+        .limit(limit)
+
+        .lean(),
+
+
+
+      AuditLog.countDocuments(filter)
+
+
+
+    ]);
+
+
+
+
+
+    return res.status(200).json({
+
+      success:true,
+
+      page,
+
+      limit,
+
+      total,
+
+      totalPages:
+      Math.ceil(total / limit),
+
+
+      logs
+
+    });
+
+
+
+  } catch(error){
+
+
+    console.error(
+      "Get audit-log error:",
+      error
+    );
+
+
+    return res.status(500).json({
+
+      success:false,
+
+      message:"Server error"
+
+    });
+
+
+  }
+
 };
