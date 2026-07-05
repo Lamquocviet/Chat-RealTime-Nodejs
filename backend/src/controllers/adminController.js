@@ -192,7 +192,7 @@ export const demoteToAdmin = async (req, res) => {
   }
 };
 
-//  account
+// block account
 export const blockUser = async (req, res) => {
   try {
     const { userId } = req.params;

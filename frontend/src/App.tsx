@@ -1,9 +1,11 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import SignInPage from "./pages/SignInPage";
 import ChatAppPage from "./pages/ChatAppPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 import { Toaster } from "sonner";
 import SignUpPage from "./pages/SignUpPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import { useThemeStore } from "./stores/useThemeStore";
 import { useEffect } from "react";
 import { useAuthStore } from "./stores/useAuthStore";
@@ -42,11 +44,19 @@ function App() {
             element={<SignUpPage />}
           />
 
-          {/* protectect routes */}
+          {/* protected routes - Chat */}
           <Route element={<ProtectedRoute />}>
             <Route
               path="/"
               element={<ChatAppPage />}
+            />
+          </Route>
+
+          {/* protected routes - Admin */}
+          <Route element={<AdminProtectedRoute />}>
+            <Route
+              path="/admin/dashboard"
+              element={<AdminDashboardPage />}
             />
           </Route>
         </Routes>
