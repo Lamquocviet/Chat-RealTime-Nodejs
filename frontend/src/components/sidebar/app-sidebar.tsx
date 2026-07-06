@@ -12,7 +12,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Moon, Sun, LayoutGrid, BarChart3, Users, FileText } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  LayoutGrid,
+  BarChart3,
+  Users,
+  FileText,
+} from "lucide-react";
 import { Switch } from "../ui/switch";
 import CreateNewChat from "../chat/CreateNewChat";
 import NewGroupChatModal from "../chat/NewGroupChatModal";
@@ -24,6 +31,8 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import ConversationSkeleton from "../skeleton/ConversationSkeleton";
 import { useChatStore } from "@/stores/useChatStore";
 import { Link } from "react-router";
+import { Button } from "../ui/button";
+import AdminDashboardPage from "@/components/admin/AdminDashboardPage";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isDark, toggleTheme } = useThemeStore();
@@ -73,34 +82,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link to="/admin/dashboard" className="flex items-center gap-2">
+                    <Link
+                      to="/admin/dashboard"
+                      className="flex items-center gap-2"
+                    >
                       <LayoutGrid className="size-4" />
                       <span>Dashboard</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+               
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <a href="#" className="flex items-center gap-2 opacity-50 cursor-not-allowed">
-                      <BarChart3 className="size-4" />
-                      <span>Statistics</span>
-                    </a>
+                    <Link
+                      to="/admin/user-management"
+                      className="flex items-center gap-2"
+                    >
+                      <LayoutGrid className="size-4" />
+                      <span>Quản lý người dùng</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <a href="#" className="flex items-center gap-2 opacity-50 cursor-not-allowed">
-                      <Users className="size-4" />
-                      <span>User Management</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <a href="#" className="flex items-center gap-2 opacity-50 cursor-not-allowed">
+                    <Link
+                      to ="/admin/audit-logs"
+                      className="flex items-center gap-2"
+                    >
                       <FileText className="size-4" />
                       <span>Audit Logs</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -133,13 +144,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
             {/* Dirrect Message */}
             <SidebarGroup>
-              <SidebarGroupLabel className="uppercase">bạn bè</SidebarGroupLabel>
+              <SidebarGroupLabel className="uppercase">
+                bạn bè
+              </SidebarGroupLabel>
               <SidebarGroupAction title="Kết Bạn" className="cursor-pointer">
                 <AddFriendModal />
               </SidebarGroupAction>
 
               <SidebarGroupContent>
-                {convoLoading ? <ConversationSkeleton /> : <DirectMessageList />}
+                {convoLoading ? (
+                  <ConversationSkeleton />
+                ) : (
+                  <DirectMessageList />
+                )}
               </SidebarGroupContent>
             </SidebarGroup>
           </>

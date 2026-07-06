@@ -23,7 +23,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import AdminLayout from "@/components/admin/AdminLayout";
+
  
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -140,7 +140,7 @@ const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
 /*  Main dashboard                                                     */
 /* ------------------------------------------------------------------ */
  
-const AdminDashboardPage: React.FC = () => {
+const Dashboard: React.FC = () => {
   const [now, setNow] = useState<Date>(new Date());
   const [range, setRange] = useState<string>("This Month");
  
@@ -212,7 +212,7 @@ const AdminDashboardPage: React.FC = () => {
   ];
  
   return (
-    <AdminLayout>
+    
       <div className="bg-slate-50 p-6 md:p-8">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
         {/* Header */}
@@ -388,8 +388,7 @@ const AdminDashboardPage: React.FC = () => {
         </div>
       </div>
     </div>
-    </AdminLayout>
   );
 };
 
-export default AdminDashboardPage;
+export default Dashboard;
