@@ -80,36 +80,6 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     }
   };
 
-  const handleAudioCall = async () => {
-    if (!otherUser) return;
-
-    if (callState.status !== "idle") {
-      toast.error("Có cuộc gọi đang diễn ra");
-      return;
-    }
-
-    if (!onlineUsers.includes(otherUser._id)) {
-      toast.error("Người dùng đang offline");
-      return;
-    }
-
-    try {
-      await initializeCall(
-        otherUser._id,
-        {
-          _id: otherUser._id,
-          displayName: otherUser.displayName,
-          avatarUrl: otherUser.avatarUrl,
-        },
-        "audio",
-      );
-      toast.success("Đang gọi thoại đến " + otherUser.displayName);
-    } catch (error) {
-      console.error("Lỗi khi khởi tạo cuộc gọi thoại:", error);
-      toast.error("Lỗi khi bắt đầu cuộc gọi thoại");
-    }
-  };
-
   return (
     <>
       <header className="sticky top-0 z-10 px-4 py-2 flex items-center bg-background">

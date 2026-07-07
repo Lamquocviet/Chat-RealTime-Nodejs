@@ -1,3 +1,5 @@
+import type { User } from "./user";
+
 export interface UserStats {
   totalUsers: number;
   activeUsers: number;
@@ -15,4 +17,13 @@ export interface AdminState {
   fetchStats: () => Promise<void>;
   refetch: () => Promise<void>;
   resetError: () => void;
+}
+
+export interface UserResponse {
+  success: boolean;
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  users: User[];
 }

@@ -213,7 +213,7 @@ const Dashboard: React.FC = () => {
  
   return (
     
-      <div className="bg-slate-50 p-6 md:p-8">
+      <div className="p-0">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-200 pb-6">

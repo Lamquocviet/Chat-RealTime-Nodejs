@@ -12,14 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  Moon,
-  Sun,
-  LayoutGrid,
-  BarChart3,
-  Users,
-  FileText,
-} from "lucide-react";
+import { Moon, Sun, LayoutGrid, FileText } from "lucide-react";
 import { Switch } from "../ui/switch";
 import CreateNewChat from "../chat/CreateNewChat";
 import NewGroupChatModal from "../chat/NewGroupChatModal";
@@ -31,14 +24,14 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import ConversationSkeleton from "../skeleton/ConversationSkeleton";
 import { useChatStore } from "@/stores/useChatStore";
 import { Link } from "react-router";
-import { Button } from "../ui/button";
-import AdminDashboardPage from "@/components/admin/AdminDashboardPage";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isDark, toggleTheme } = useThemeStore();
   const { user } = useAuthStore();
   const { convoLoading } = useChatStore();
   const isAdmin = user?.role === "admin";
+
+
 
   return (
     <Sidebar variant="inset" {...props}>

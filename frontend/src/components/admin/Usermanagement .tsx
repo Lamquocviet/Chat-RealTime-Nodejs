@@ -1,9 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
   ChevronDown,
   Download,
-  Plus,
   Eye,
   KeyRound,
   Trash2,
@@ -12,6 +11,10 @@ import {
   ChevronRight,
   ArrowUpDown,
 } from "lucide-react";
+import { useAdminStore } from "@/stores/useAdminStore";
+import type { User } from "@/types/user";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -31,127 +34,47 @@ interface UserRow {
   onlineStatus: OnlineStatus;
   joinedDate: string;
   avatarColor: string;
+  avatarUrl: string;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Static data                                                        */
+/*  Helpers for API data                                              */
 /* ------------------------------------------------------------------ */
 
-const USERS: UserRow[] = [
-  {
-    id: "1",
-    displayName: "Viet Lam Quoc",
-    username: "lqv2005",
-    email: "vietlamquoc@gmail.com",
-    role: "Admin",
-    status: "Active",
-    onlineStatus: "Online",
-    joinedDate: "May 31, 2025",
-    avatarColor: "bg-purple-200 text-purple-700",
-  },
-  {
-    id: "2",
-    displayName: "Nguyen Van A",
-    username: "nguyenvana",
-    email: "nguyenvana@gmail.com",
-    role: "User",
-    status: "Active",
-    onlineStatus: "Offline",
-    joinedDate: "May 30, 2025",
-    avatarColor: "bg-blue-200 text-blue-700",
-  },
-  {
-    id: "3",
-    displayName: "Tran Thi B",
-    username: "tranthib",
-    email: "tranthib@gmail.com",
-    role: "User",
-    status: "Active",
-    onlineStatus: "Online",
-    joinedDate: "May 30, 2025",
-    avatarColor: "bg-pink-200 text-pink-700",
-  },
-  {
-    id: "4",
-    displayName: "Le Van C",
-    username: "levanc",
-    email: "levanc@gmail.com",
-    role: "Moderator",
-    status: "Active",
-    onlineStatus: "Offline",
-    joinedDate: "May 29, 2025",
-    avatarColor: "bg-amber-200 text-amber-700",
-  },
-  {
-    id: "5",
-    displayName: "Pham Duy D",
-    username: "phamduyd",
-    email: "phamduyd@gmail.com",
-    role: "User",
-    status: "Blocked",
-    onlineStatus: "Offline",
-    joinedDate: "May 29, 2025",
-    avatarColor: "bg-emerald-200 text-emerald-700",
-  },
-  {
-    id: "6",
-    displayName: "Hoang Thi E",
-    username: "hoangthie",
-    email: "hoangthie@gmail.com",
-    role: "User",
-    status: "Active",
-    onlineStatus: "Online",
-    joinedDate: "May 28, 2025",
-    avatarColor: "bg-indigo-200 text-indigo-700",
-  },
-  {
-    id: "7",
-    displayName: "Doan Van F",
-    username: "doanvanf",
-    email: "doanvanf@gmail.com",
-    role: "User",
-    status: "Inactive",
-    onlineStatus: "Offline",
-    joinedDate: "May 28, 2025",
-    avatarColor: "bg-slate-200 text-slate-700",
-  },
-  {
-    id: "8",
-    displayName: "Bui Thi G",
-    username: "buithig",
-    email: "buithig@gmail.com",
-    role: "User",
-    status: "Active",
-    onlineStatus: "Online",
-    joinedDate: "May 27, 2025",
-    avatarColor: "bg-rose-200 text-rose-700",
-  },
-  {
-    id: "9",
-    displayName: "Pham Van H",
-    username: "phamvanh",
-    email: "phamvanh@gmail.com",
-    role: "Moderator",
-    status: "Active",
-    onlineStatus: "Online",
-    joinedDate: "May 27, 2025",
-    avatarColor: "bg-cyan-200 text-cyan-700",
-  },
-  {
-    id: "10",
-    displayName: "Nguyen Thi I",
-    username: "nguyenthii",
-    email: "nguyenthii@gmail.com",
-    role: "User",
-    status: "Blocked",
-    onlineStatus: "Offline",
-    joinedDate: "May 26, 2025",
-    avatarColor: "bg-violet-200 text-violet-700",
-  },
-];
+const normalizeRole = (role?: string): Role => {
+  if (role === "admin") return "Admin";
+  if (role === "moderator") return "Moderator";
+  return "User";
+};
 
-const TOTAL_USERS = 1245;
-const TOTAL_PAGES = 125;
+const normalizeStatus = (status?: string): Status => {
+  if (status === "blocked") return "Blocked";
+  if (status === "inactive") return "Inactive";
+  return "Active";
+};
+
+const normalizeOnlineStatus = (isOnline?: boolean): OnlineStatus =>
+  isOnline ? "Online" : "Offline";
+
+const mapUserToRow = (user: User): UserRow => ({
+  id: user._id,
+  avatarUrl: user.avatarUrl || "",
+  displayName: user.displayName || user.username,
+  username: user.username,
+  email: user.email,
+  role: normalizeRole(user.role),
+  status: normalizeStatus(user.status),
+  onlineStatus: normalizeOnlineStatus(user.isOnline),
+  joinedDate: user.createdAt
+    ? new Date(user.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "N/A",
+  avatarColor: "bg-purple-200 text-purple-700",
+});
+
 
 /* ------------------------------------------------------------------ */
 /*  Small presentational helpers                                       */
@@ -217,6 +140,8 @@ const ONLINE_OPTIONS = ["All", "Online", "Offline"];
 const PAGE_SIZE_OPTIONS = ["10 per page", "25 per page", "50 per page"];
 
 const UserManagement: React.FC = () => {
+  const { users, total, totalPages, loading, error, getAllUser } =
+    useAdminStore();
   const [search, setSearch] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("All Roles");
   const [statusFilter, setStatusFilter] = useState<string>("All Statuses");
@@ -225,6 +150,15 @@ const UserManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [sortKey, setSortKey] = useState<keyof UserRow | null>(null);
   const [sortAsc, setSortAsc] = useState<boolean>(true);
+
+  const pageSizeNumber = Number(pageSize.split(" ")[0]) || 10;
+
+  console.log("User: ", users);
+  useEffect(() => {
+    void getAllUser(currentPage, pageSizeNumber);
+  }, [currentPage, pageSizeNumber, getAllUser]);
+
+  const mappedUsers = useMemo(() => users.map(mapUserToRow), [users]);
 
   const hasActiveFilters =
     search !== "" ||
@@ -239,6 +173,10 @@ const UserManagement: React.FC = () => {
     setOnlineFilter("All");
   };
 
+  const handleRefresh = () => {
+    void getAllUser(currentPage, pageSizeNumber);
+  };
+
   const handleSort = (key: keyof UserRow) => {
     if (sortKey === key) {
       setSortAsc((prev) => !prev);
@@ -249,7 +187,7 @@ const UserManagement: React.FC = () => {
   };
 
   const filteredUsers = useMemo(() => {
-    let rows = USERS.filter((u) => {
+    let rows = mappedUsers.filter((u) => {
       const matchesSearch =
         search.trim() === "" ||
         u.displayName.toLowerCase().includes(search.toLowerCase()) ||
@@ -274,7 +212,15 @@ const UserManagement: React.FC = () => {
     }
 
     return rows;
-  }, [search, roleFilter, statusFilter, onlineFilter, sortKey, sortAsc]);
+  }, [
+    mappedUsers,
+    search,
+    roleFilter,
+    statusFilter,
+    onlineFilter,
+    sortKey,
+    sortAsc,
+  ]);
 
   const columns: { key: keyof UserRow; label: string }[] = [
     { key: "displayName", label: "User" },
@@ -286,8 +232,49 @@ const UserManagement: React.FC = () => {
     { key: "joinedDate", label: "Joined Date" },
   ];
 
+  const totalUsers = total > 0 ? total : mappedUsers.length;
+  const pageCount =
+    totalPages > 0
+      ? totalPages
+      : Math.max(1, Math.ceil(totalUsers / pageSizeNumber));
+  const pageButtons = Array.from(
+    { length: Math.min(pageCount, 5) },
+    (_, index) => index + 1,
+  );
+
+  const handleExportExcel = () => {
+    console.log("Export clicked");
+  const data = filteredUsers.map((user, index) => ({
+    "No.": index + 1,
+    "Display Name": user.displayName,
+    Username: user.username,
+    Email: user.email,
+    Role: user.role,
+    Status: user.status,
+    "Online Status": user.onlineStatus,
+    "Joined Date": user.joinedDate,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  saveAs(blob, `users-${new Date().toISOString().slice(0, 10)}.xlsx`);
+};
+
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-8">
+    <div className="min-h-screen ">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-200 pb-6">
@@ -296,8 +283,8 @@ const UserManagement: React.FC = () => {
               User Management
             </h1>
             <p className="text-sm text-slate-400 mt-1">
-              Manage all users in the system. You can search, filter, and
-              take actions on users.
+              Manage all users in the system. You can search, filter, and take
+              actions on users.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -306,6 +293,7 @@ const UserManagement: React.FC = () => {
             </span>
             <button
               type="button"
+              onClick={handleRefresh}
               className="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
               aria-label="Refresh"
             >
@@ -368,13 +356,13 @@ const UserManagement: React.FC = () => {
               Clear Filters
             </button>
 
-            <button
+            {/* <button
               type="button"
               className="px-4 py-2.5 text-sm font-medium rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
               Add User
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -383,12 +371,16 @@ const UserManagement: React.FC = () => {
           {/* Table toolbar */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <span className="text-sm text-slate-600">
-              Total Users: <span className="font-semibold">{TOTAL_USERS.toLocaleString()}</span>
+              Total Users:{" "}
+              <span className="font-semibold">
+                {totalUsers.toLocaleString()}
+              </span>
             </span>
             <div className="flex items-center gap-3">
               <button
+              onClick={handleExportExcel}
                 type="button"
-                className="px-3.5 py-2 text-sm font-medium rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-1.5"
+                className="px-3.5 py-2 text-sm font-medium rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 Export
@@ -397,7 +389,10 @@ const UserManagement: React.FC = () => {
                 label=""
                 value={pageSize}
                 options={PAGE_SIZE_OPTIONS}
-                onChange={setPageSize}
+                onChange={(value) => {
+                  setPageSize(value);
+                  setCurrentPage(1);
+                }}
                 compact
               />
             </div>
@@ -426,70 +421,90 @@ const UserManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((u) => (
-                  <tr
-                    key={u.id}
-                    className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors"
-                  >
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${u.avatarColor}`}
-                        >
-                          {initials(u.displayName)}
-                        </div>
-                        <span className="font-medium text-slate-700 whitespace-nowrap">
-                          {u.displayName}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
-                      {u.username}
-                    </td>
-                    <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
-                      {u.email}
-                    </td>
-                    <td className="px-5 py-3">
-                      <RoleBadge role={u.role} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <StatusBadge status={u.status} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <OnlineDot status={u.onlineStatus} />
-                    </td>
-                    <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
-                      {u.joinedDate}
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <ActionButton
-                          icon={<Eye className="w-3.5 h-3.5" />}
-                          color="text-purple-500 bg-purple-50 hover:bg-purple-100"
-                          label={`View ${u.displayName}`}
-                        />
-                        <ActionButton
-                          icon={<KeyRound className="w-3.5 h-3.5" />}
-                          color="text-amber-500 bg-amber-50 hover:bg-amber-100"
-                          label={`Reset password for ${u.displayName}`}
-                        />
-                        <ActionButton
-                          icon={<Trash2 className="w-3.5 h-3.5" />}
-                          color="text-red-500 bg-red-50 hover:bg-red-100"
-                          label={`Delete ${u.displayName}`}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {filteredUsers.length === 0 && (
+                {loading && (
                   <tr>
                     <td
                       colSpan={columns.length + 1}
                       className="px-5 py-10 text-center text-slate-400"
                     >
-                      No users match your filters.
+                      Loading users...
+                    </td>
+                  </tr>
+                )}
+
+                {!loading &&
+                  filteredUsers.map((u) => (
+                    <tr
+                      key={u.id}
+                      className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors"
+                    >
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-100 flex items-center justify-center shrink-0">
+                            {u.avatarUrl ? (
+                              <img
+                                src={u.avatarUrl}
+                                alt={u.displayName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-xs font-semibold text-slate-700">
+                                {initials(u.displayName)}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-medium text-slate-700 whitespace-nowrap">
+                            {u.displayName}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                        {u.username}
+                      </td>
+                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                        {u.email}
+                      </td>
+                      <td className="px-5 py-3">
+                        <RoleBadge role={u.role} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <StatusBadge status={u.status} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <OnlineDot status={u.onlineStatus} />
+                      </td>
+                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                        {u.joinedDate}
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <ActionButton
+                            icon={<Eye className="w-3.5 h-3.5" />}
+                            color="text-purple-500 bg-purple-50 hover:bg-purple-100"
+                            label={`View ${u.displayName}`}
+                          />
+                          <ActionButton
+                            icon={<KeyRound className="w-3.5 h-3.5" />}
+                            color="text-amber-500 bg-amber-50 hover:bg-amber-100"
+                            label={`Reset password for ${u.displayName}`}
+                          />
+                          <ActionButton
+                            icon={<Trash2 className="w-3.5 h-3.5" />}
+                            color="text-red-500 bg-red-50 hover:bg-red-100"
+                            label={`Delete ${u.displayName}`}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                {!loading && filteredUsers.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={columns.length + 1}
+                      className="px-5 py-10 text-center text-slate-400"
+                    >
+                      {error ? error : "No users match your filters."}
                     </td>
                   </tr>
                 )}
@@ -505,7 +520,7 @@ const UserManagement: React.FC = () => {
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               />
-              {[1, 2, 3, 4, 5].map((page) => (
+              {pageButtons.map((page) => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
@@ -518,27 +533,30 @@ const UserManagement: React.FC = () => {
                   {page}
                 </button>
               ))}
-              <span className="px-1 text-slate-400">…</span>
-              <button
-                onClick={() => setCurrentPage(TOTAL_PAGES)}
-                className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                  currentPage === TOTAL_PAGES
-                    ? "bg-purple-600 text-white"
-                    : "text-slate-500 hover:bg-slate-100"
-                }`}
-              >
-                {TOTAL_PAGES}
-              </button>
+              {pageCount > 5 && <span className="px-1 text-slate-400">…</span>}
+              {pageCount > 5 && (
+                <button
+                  onClick={() => setCurrentPage(pageCount)}
+                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === pageCount
+                      ? "bg-purple-600 text-white"
+                      : "text-slate-500 hover:bg-slate-100"
+                  }`}
+                >
+                  {pageCount}
+                </button>
+              )}
               <PageArrow
                 icon={<ChevronRight className="w-4 h-4" />}
-                disabled={currentPage === TOTAL_PAGES}
+                disabled={currentPage === pageCount}
                 onClick={() =>
-                  setCurrentPage((p) => Math.min(TOTAL_PAGES, p + 1))
+                  setCurrentPage((p) => Math.min(pageCount, p + 1))
                 }
               />
             </div>
             <span className="text-sm text-slate-400">
-              Showing 1 to {filteredUsers.length} of {TOTAL_USERS.toLocaleString()} users
+              Showing 1 to {filteredUsers.length} of{" "}
+              {totalUsers.toLocaleString()} users
             </span>
           </div>
         </div>

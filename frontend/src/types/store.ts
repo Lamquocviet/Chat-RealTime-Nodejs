@@ -111,3 +111,15 @@ export interface UserState {
   updateAvatarUrl: (formData: FormData) => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
 }
+
+export interface AdminState {
+  users: User[];
+  page: number;
+  total: number;
+  totalPages: number;
+  loading: boolean;
+  error: string | null;
+
+  getAllUser: (page?: number, limit?: number) => Promise<void>;
+  clearError: () => void;
+}

@@ -30,7 +30,8 @@ export const getAllUsers = async (req, res) => {
         isOnline: onlineUsers.has(user._id.toString())
       })
     )
-
+    console.log(users);
+console.log(total);
     return res.status(200).json({
       success: true,
       page,

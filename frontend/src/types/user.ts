@@ -8,6 +8,7 @@ export interface User {
   phone?: string;
   role?: "user" | "admin";
   status?: "active" | "blocked";
+  isOnline?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

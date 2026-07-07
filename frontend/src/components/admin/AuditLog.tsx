@@ -402,7 +402,7 @@ const AuditLogs: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-8">
+    <div className="min-h-screen p-0">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-200 pb-6">
@@ -432,75 +432,82 @@ const AuditLogs: React.FC = () => {
         </div>
 
         {/* Filters bar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Search by admin, username, action..."
-                className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:bg-white"
-              />
-            </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 space-y-4">
+  {/* Search */}
+  <div className="relative w-full">
+    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+    <input
+      type="text"
+      value={search}
+      onChange={(e) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+      }}
+      placeholder="Search by admin, username, action..."
+      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:bg-white"
+    />
+  </div>
 
-            <FilterSelect
-              label="Action"
-              value={actionFilter}
-              options={ACTION_OPTIONS}
-              onChange={(v) => {
-                setActionFilter(v);
-                setCurrentPage(1);
-              }}
-            />
-            <FilterSelect
-              label="Admin"
-              value={adminFilter}
-              options={ADMIN_OPTIONS}
-              onChange={(v) => {
-                setAdminFilter(v);
-                setCurrentPage(1);
-              }}
-            />
-            <FilterSelect
-              label="Status"
-              value={statusFilter}
-              options={STATUS_OPTIONS}
-              onChange={(v) => {
-                setStatusFilter(v);
-                setCurrentPage(1);
-              }}
-            />
-            <FilterSelect
-              label="Date"
-              value={dateFilter}
-              options={DATE_OPTIONS}
-              onChange={setDateFilter}
-              icon={<Calendar className="w-3.5 h-3.5 text-slate-400" />}
-            />
+  {/* Filters */}
+  <div className="flex flex-wrap items-center gap-3">
+    <FilterSelect
+      label="Action"
+      value={actionFilter}
+      options={ACTION_OPTIONS}
+      onChange={(v) => {
+        setActionFilter(v);
+        setCurrentPage(1);
+      }}
+    />
 
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              disabled={!hasActiveFilters}
-              className="px-4 py-2.5 text-sm font-medium rounded-xl border border-slate-200 text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-            >
-              Clear Filters
-            </button>
+    <FilterSelect
+      label="Admin"
+      value={adminFilter}
+      options={ADMIN_OPTIONS}
+      onChange={(v) => {
+        setAdminFilter(v);
+        setCurrentPage(1);
+      }}
+    />
 
-            <button
-              type="button"
-              className="px-4 py-2.5 text-sm font-medium rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
-            >
-              <Download className="w-4 h-4" />
-              Export
-            </button>
-          </div>
-        </div>
+    <FilterSelect
+      label="Status"
+      value={statusFilter}
+      options={STATUS_OPTIONS}
+      onChange={(v) => {
+        setStatusFilter(v);
+        setCurrentPage(1);
+      }}
+    />
+
+    <FilterSelect
+      label="Date"
+      value={dateFilter}
+      options={DATE_OPTIONS}
+      onChange={setDateFilter}
+      icon={<Calendar className="w-3.5 h-3.5 text-slate-400" />}
+    />
+
+    <div className="ml-auto flex gap-3">
+      <button
+        type="button"
+        onClick={handleClearFilters}
+        disabled={!hasActiveFilters}
+        className="px-4 py-2.5 text-sm font-medium rounded-xl border border-slate-200 text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        Clear Filters
+      </button>
+
+      <button
+        type="button"
+        className="px-4 py-2.5 text-sm font-medium rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-colors flex items-center gap-1.5"
+      >
+        <Download className="w-4 h-4" />
+        Export
+      </button>
+    </div>
+  </div>
+</div>
 
         {/* Table card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
