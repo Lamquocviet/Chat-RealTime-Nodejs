@@ -194,11 +194,11 @@ function initials(name: string): string {
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ icon, iconBg, label, value, trend, trendDirection }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col gap-4 min-w-0">
+  <div className="bg-card rounded-2xl shadow-sm border border-border p-5 flex flex-col gap-4 min-w-0">
     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}`}>{icon}</div>
     <div className="flex flex-col gap-1">
-      <span className="text-sm text-slate-400 truncate">{label}</span>
-      <span className="text-2xl font-bold text-slate-800 tabular-nums">{value}</span>
+      <span className="text-sm text-muted-foreground truncate">{label}</span>
+      <span className="text-2xl font-bold text-foreground tabular-nums">{value}</span>
       <div
         className={`flex items-center gap-1 text-xs font-medium ${
           trendDirection === "up" ? "text-emerald-500" : "text-red-500"
@@ -238,20 +238,20 @@ const AdminCell: React.FC<{ admin: AdminInfo }> = ({ admin }) => (
       {admin.isSystem ? <Bot className="w-4 h-4" /> : initials(admin.name)}
     </div>
     <div className="flex flex-col leading-tight">
-      <span className="font-medium text-slate-700 whitespace-nowrap">{admin.name}</span>
-      <span className="text-xs text-slate-400 whitespace-nowrap">{admin.subtitle}</span>
+      <span className="font-medium text-foreground whitespace-nowrap">{admin.name}</span>
+      <span className="text-xs text-muted-foreground whitespace-nowrap">{admin.subtitle}</span>
     </div>
   </div>
 );
 
 const TargetCell: React.FC<{ target: string; targetType: TargetType }> = ({ target, targetType }) => {
-  if (!target) return <span className="text-slate-300">—</span>;
+  if (!target) return <span className="text-muted-foreground">—</span>;
   return (
     <div className="flex items-center gap-1.5">
-      <User className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+      <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
       <div className="flex flex-col leading-tight">
-        <span className="text-slate-600 whitespace-nowrap">{target}</span>
-        <span className="text-xs text-slate-400 whitespace-nowrap">{targetType}</span>
+        <span className="text-foreground/80 whitespace-nowrap">{target}</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">{targetType}</span>
       </div>
     </div>
   );
@@ -267,7 +267,7 @@ const FilterSelect: React.FC<{
 }> = ({ label, value, options, onChange, icon, compact }) => (
   <div className={`relative ${compact ? "w-40" : "w-40"} shrink-0`}>
     {label && (
-      <span className="absolute -top-2 left-2.5 bg-white px-1 text-[10px] text-slate-400">{label}</span>
+      <span className="absolute -top-2 left-2.5 bg-background px-1 text-[10px] text-muted-foreground">{label}</span>
     )}
     {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2">{icon}</span>}
     <select
@@ -275,7 +275,7 @@ const FilterSelect: React.FC<{
       onChange={(e) => onChange(e.target.value)}
       className={`w-full appearance-none ${
         icon ? "pl-8" : "pl-3"
-      } pr-8 py-2.5 text-sm rounded-xl border border-slate-200 text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-purple-200 cursor-pointer`}
+      } pr-8 py-2.5 text-sm rounded-xl border border-border text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer`}
     >
       {options.map((opt) => (
         <option key={opt} value={opt}>
@@ -283,7 +283,7 @@ const FilterSelect: React.FC<{
         </option>
       ))}
     </select>
-    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+    <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
   </div>
 );
 
@@ -296,7 +296,7 @@ const PageArrow: React.FC<{ icon: React.ReactNode; disabled: boolean; onClick: (
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+    className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
   >
     {icon}
   </button>
@@ -405,18 +405,18 @@ const AuditLogs: React.FC = () => {
     <div className="min-h-screen p-0">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-200 pb-6">
+        <div className="flex items-start justify-between border-b border-border pb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Audit Logs</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <h1 className="text-2xl font-bold text-foreground">Audit Logs</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Monitor administrator activities and important system events.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-500 tabular-nums">16:22:29</span>
+            <span className="text-sm font-medium text-muted-foreground tabular-nums">16:22:29</span>
             <button
               type="button"
-              className="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+              className="w-9 h-9 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
@@ -432,10 +432,10 @@ const AuditLogs: React.FC = () => {
         </div>
 
         {/* Filters bar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 space-y-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-4 space-y-4">
   {/* Search */}
   <div className="relative w-full">
-    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+    <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
     <input
       type="text"
       value={search}
@@ -444,7 +444,7 @@ const AuditLogs: React.FC = () => {
         setCurrentPage(1);
       }}
       placeholder="Search by admin, username, action..."
-      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:bg-white"
+      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-card"
     />
   </div>
 
@@ -485,7 +485,7 @@ const AuditLogs: React.FC = () => {
       value={dateFilter}
       options={DATE_OPTIONS}
       onChange={setDateFilter}
-      icon={<Calendar className="w-3.5 h-3.5 text-slate-400" />}
+      icon={<Calendar className="w-3.5 h-3.5 text-muted-foreground" />}
     />
 
     <div className="ml-auto flex gap-3">
@@ -493,14 +493,14 @@ const AuditLogs: React.FC = () => {
         type="button"
         onClick={handleClearFilters}
         disabled={!hasActiveFilters}
-        className="px-4 py-2.5 text-sm font-medium rounded-xl border border-slate-200 text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="px-4 py-2.5 text-sm font-medium rounded-xl border border-border text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         Clear Filters
       </button>
 
       <button
         type="button"
-        className="px-4 py-2.5 text-sm font-medium rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-colors flex items-center gap-1.5"
+        className="px-4 py-2.5 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5"
       >
         <Download className="w-4 h-4" />
         Export
@@ -510,14 +510,14 @@ const AuditLogs: React.FC = () => {
 </div>
 
         {/* Table card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-slate-400 text-xs uppercase tracking-wide">
+                <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wide">
                   <th
                     onClick={() => setSortAsc((v) => !v)}
-                    className="text-left font-medium px-5 py-3 cursor-pointer select-none hover:text-slate-600 whitespace-nowrap"
+                    className="text-left font-medium px-5 py-3 cursor-pointer select-none hover:text-foreground whitespace-nowrap"
                   >
                     <span className="inline-flex items-center gap-1">
                       Time
@@ -535,8 +535,8 @@ const AuditLogs: React.FC = () => {
               </thead>
               <tbody>
                 {filteredLogs.map((log) => (
-                  <tr key={log.id} className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{log.time}</td>
+                  <tr key={log.id} className="border-t border-border hover:bg-muted/60 transition-colors">
+                    <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{log.time}</td>
                     <td className="px-5 py-3">
                       <AdminCell admin={log.admin} />
                     </td>
@@ -546,8 +546,8 @@ const AuditLogs: React.FC = () => {
                     <td className="px-5 py-3">
                       <TargetCell target={log.target} targetType={log.targetType} />
                     </td>
-                    <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{log.details}</td>
-                    <td className="px-5 py-3 text-slate-500 whitespace-nowrap">{log.ipAddress}</td>
+                    <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{log.details}</td>
+                    <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{log.ipAddress}</td>
                     <td className="px-5 py-3">
                       <StatusPill status={log.status} />
                     </td>
@@ -565,7 +565,7 @@ const AuditLogs: React.FC = () => {
 
                 {filteredLogs.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-5 py-10 text-center text-slate-400">
+                    <td colSpan={8} className="px-5 py-10 text-center text-muted-foreground">
                       No logs match your filters.
                     </td>
                   </tr>
@@ -575,7 +575,7 @@ const AuditLogs: React.FC = () => {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100">
+          <div className="flex items-center justify-between px-5 py-4 border-t border-border">
             <div className="flex items-center gap-1.5">
               <PageArrow
                 icon={<ChevronLeft className="w-4 h-4" />}
@@ -587,17 +587,17 @@ const AuditLogs: React.FC = () => {
                   key={page}
                   onClick={() => setCurrentPage(page)}
                   className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                    currentPage === page ? "bg-purple-600 text-white" : "text-slate-500 hover:bg-slate-100"
+                    currentPage === page ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   {page}
                 </button>
               ))}
-              <span className="px-1 text-slate-400">…</span>
+              <span className="px-1 text-muted-foreground">…</span>
               <button
                 onClick={() => setCurrentPage(TOTAL_PAGES)}
                 className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                  currentPage === TOTAL_PAGES ? "bg-purple-600 text-white" : "text-slate-500 hover:bg-slate-100"
+                  currentPage === TOTAL_PAGES ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
                 }`}
               >
                 {TOTAL_PAGES}
@@ -609,7 +609,7 @@ const AuditLogs: React.FC = () => {
               />
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-slate-400">
+              <span className="text-sm text-muted-foreground">
                 Showing 1 to {filteredLogs.length} of {TOTAL_LOGS.toLocaleString()} logs
               </span>
               <FilterSelect
