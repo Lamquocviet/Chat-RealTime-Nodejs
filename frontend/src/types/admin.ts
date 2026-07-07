@@ -27,3 +27,9 @@ export interface UserResponse {
   totalPages: number;
   users: User[];
 }
+
+export interface AdminActionResponse {
+  success: boolean;
+  message: string;
+  user?: User;
+}

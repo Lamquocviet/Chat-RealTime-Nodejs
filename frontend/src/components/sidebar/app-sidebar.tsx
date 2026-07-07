@@ -23,15 +23,13 @@ import { useThemeStore } from "@/stores/useThemeStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import ConversationSkeleton from "../skeleton/ConversationSkeleton";
 import { useChatStore } from "@/stores/useChatStore";
-import { Link } from "react-router";
+import { Link, NavLink } from "react-router";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isDark, toggleTheme } = useThemeStore();
   const { user } = useAuthStore();
   const { convoLoading } = useChatStore();
   const isAdmin = user?.role === "admin";
-
-
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -74,38 +72,63 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link
-                      to="/admin/dashboard"
-                      className="flex items-center gap-2"
-                    >
-                      <LayoutGrid className="size-4" />
-                      <span>Dashboard</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  <NavLink to="/admin/dashboard">
+                    {({ isActive }) => (
+                      <SidebarMenuButton
+                        className={`h-11 rounded-xl transition-all duration-300
+                        ${
+                          isActive
+                            ? "font-semibold bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 border border-violet-200"
+                            : "hover:bg-violet-50 hover:text-violet-600"
+                        }
+                      `}
+                      >
+                        <LayoutGrid className="size-4" />
+                        <span>Dashboard</span>
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
                 </SidebarMenuItem>
-               
+
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link
-                      to="/admin/user-management"
-                      className="flex items-center gap-2"
-                    >
-                      <LayoutGrid className="size-4" />
-                      <span>Quản lý người dùng</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  {/* <SidebarMenuButton asChild> */}
+                  <NavLink to="/admin/user-management">
+                    {({ isActive }) => (
+                      <SidebarMenuButton
+                        className={`h-11 rounded-xl transition-all duration-300
+                        ${
+                          isActive
+                            ? "font-semibold bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 border border-violet-200"
+                            : "hover:bg-violet-50 hover:text-violet-600"
+                        }
+                      `}
+                      >
+                        <LayoutGrid className="size-4" />
+                        <span>User Management</span>
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
+                  {/* </SidebarMenuButton> */}
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link
-                      to ="/admin/audit-logs"
-                      className="flex items-center gap-2"
-                    >
-                      <FileText className="size-4" />
-                      <span>Audit Logs</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  {/* <SidebarMenuButton asChild> */}
+                  <NavLink to="/admin/audit-logs">
+                    {({ isActive }) => (
+                      <SidebarMenuButton
+                        className={`h-11 rounded-xl transition-all duration-300
+                        ${
+                          isActive
+                            ? "font-semibold bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 border border-violet-200"
+                            : "hover:bg-violet-50 hover:text-violet-600"
+                        }
+                      `}
+                      >
+                        <LayoutGrid className="size-4" />
+                        <span>Audit Logs</span>
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
+                  {/* </SidebarMenuButton> */}
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>

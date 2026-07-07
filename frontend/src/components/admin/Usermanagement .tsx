@@ -10,11 +10,26 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
+  MoreHorizontal,
+  ShieldCheck,
+  ShieldOff,
+  UserX,
+  UserCheck,
 } from "lucide-react";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { User } from "@/types/user";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -74,7 +89,6 @@ const mapUserToRow = (user: User): UserRow => ({
     : "N/A",
   avatarColor: "bg-purple-200 text-purple-700",
 });
-
 
 /* ------------------------------------------------------------------ */
 /*  Small presentational helpers                                       */
@@ -140,8 +154,7 @@ const ONLINE_OPTIONS = ["All", "Online", "Offline"];
 const PAGE_SIZE_OPTIONS = ["10 per page", "25 per page", "50 per page"];
 
 const UserManagement: React.FC = () => {
-  const { users, total, totalPages, loading, error, getAllUser } =
-    useAdminStore();
+  const { users, total, totalPages, loading, error, getAllUser, deleteUser, promoteUser, demoteUser, blockUser, activeUser } = useAdminStore();
   const [search, setSearch] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("All Roles");
   const [statusFilter, setStatusFilter] = useState<string>("All Statuses");
@@ -244,33 +257,63 @@ const UserManagement: React.FC = () => {
 
   const handleExportExcel = () => {
     console.log("Export clicked");
-  const data = filteredUsers.map((user, index) => ({
-    "No.": index + 1,
-    "Display Name": user.displayName,
-    Username: user.username,
-    Email: user.email,
-    Role: user.role,
-    Status: user.status,
-    "Online Status": user.onlineStatus,
-    "Joined Date": user.joinedDate,
-  }));
+    const data = filteredUsers.map((user, index) => ({
+      "No.": index + 1,
+      "Display Name": user.displayName,
+      Username: user.username,
+      Email: user.email,
+      Role: user.role,
+      Status: user.status,
+      "Online Status": user.onlineStatus,
+      "Joined Date": user.joinedDate,
+    }));
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.json_to_sheet(data);
 
-  const workbook = XLSX.utils.book_new();
+    const workbook = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
-  });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
 
-  const blob = new Blob([excelBuffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
 
-  saveAs(blob, `users-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    saveAs(blob, `users-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+  const handleDelete = async (userId: string) => {
+  if (!window.confirm("Are you sure you want to permanently delete this user?"))
+    return;
+
+  await deleteUser(userId);
+};
+
+const handlePromote = async (userId: string) => {
+  if (!window.confirm("Promote this user to Admin?")) return;
+
+  await promoteUser(userId);
+};
+
+const handleDemote = async (userId: string) => {
+  if (!window.confirm("Remove admin privileges?")) return;
+
+  await demoteUser(userId);
+};
+
+const handleBlock = async (userId: string) => {
+  if (!window.confirm("Block this account?")) return;
+
+  await blockUser(userId);
+};
+
+const handleActivate = async (userId: string) => {
+  if (!window.confirm("Activate this account?")) return;
+
+  await activeUser(userId);
 };
 
   return (
@@ -378,9 +421,9 @@ const UserManagement: React.FC = () => {
             </span>
             <div className="flex items-center gap-3">
               <button
-              onClick={handleExportExcel}
+                onClick={handleExportExcel}
                 type="button"
-                className="px-3.5 py-2 text-sm font-medium rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2 text-sm font-medium rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-1.5 cursor-pointert p"
               >
                 <Download className="w-4 h-4" />
                 Export
@@ -478,21 +521,112 @@ const UserManagement: React.FC = () => {
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
-                          <ActionButton
-                            icon={<Eye className="w-3.5 h-3.5" />}
-                            color="text-purple-500 bg-purple-50 hover:bg-purple-100"
-                            label={`View ${u.displayName}`}
-                          />
-                          <ActionButton
-                            icon={<KeyRound className="w-3.5 h-3.5" />}
-                            color="text-amber-500 bg-amber-50 hover:bg-amber-100"
-                            label={`Reset password for ${u.displayName}`}
-                          />
-                          <ActionButton
-                            icon={<Trash2 className="w-3.5 h-3.5" />}
-                            color="text-red-500 bg-red-50 hover:bg-red-100"
-                            label={`Delete ${u.displayName}`}
-                          />
+                          {/* Manage */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                className="
+          flex items-center gap-2
+          h-9 px-3
+          rounded-xl
+          border
+          border-slate-200
+          bg-white
+          hover:bg-slate-50
+          transition-all
+          "
+                              >
+                                <span className="text-sm font-medium">
+                                  Manage
+                                </span>
+
+                                <ChevronDown className="w-4 h-4 text-slate-500" />
+                              </button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-64 rounded-xl p-2"
+                            >
+                              <DropdownMenuLabel className="text-slate-500">
+                                User Actions
+                              </DropdownMenuLabel>
+
+                              <DropdownMenuSeparator />
+
+                              {/* Role */}
+
+                              {u.role === "User" ? (
+                                <DropdownMenuItem
+                                  className="rounded-lg cursor-pointer"
+                                  onClick={() => handlePromote(u.id)}
+                                >
+                                  <ShieldCheck className="w-4 h-4 mr-3 text-violet-600" />
+                                  <div>
+                                    <p className="font-medium">
+                                      Promote to Admin
+                                    </p>
+                                    <p className="text-xs text-slate-400">
+                                      Give administrator permissions
+                                    </p>
+                                  </div>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => handleDemote(u.id)}>
+                                  <ShieldOff className="w-4 h-4 mr-3 text-orange-500" />
+                                  <div>
+                                    <p className="font-medium">
+                                      Demote to User
+                                    </p>
+                                    <p className="text-xs text-slate-400">
+                                      Remove administrator role
+                                    </p>
+                                  </div>
+                                </DropdownMenuItem>
+                              )}
+
+                              <DropdownMenuSeparator />
+
+                              {/* Block */}
+
+                              {u.status === "Active" ? (
+                                <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => handleBlock(u.id)}>
+                                  <UserX className="w-4 h-4 mr-3 text-amber-500" />
+                                  <div>
+                                    <p className="font-medium">Block User</p>
+                                    <p className="text-xs text-slate-400">
+                                      Prevent user from logging in
+                                    </p>
+                                  </div>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => handleActivate(u.id)}>
+                                  <UserCheck className="w-4 h-4 mr-3 text-emerald-600" />
+                                  <div>
+                                    <p className="font-medium">Activate User</p>
+                                    <p className="text-xs text-slate-400">
+                                      Restore account access
+                                    </p>
+                                  </div>
+                                </DropdownMenuItem>
+                              )}
+
+                              <DropdownMenuSeparator />
+
+                              <DropdownMenuItem className="rounded-lg cursor-pointer text-red-600 focus:text-red-600" 
+                                onClick={() => handleDelete(u.id)}>
+                                <Trash2 className="w-4 h-4 mr-3" />
+
+                                <div>
+                                  <p className="font-medium">Delete User</p>
+
+                                  <p className="text-xs text-red-400">
+                                    Permanently remove account
+                                  </p>
+                                </div>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </td>
                     </tr>

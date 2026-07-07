@@ -118,8 +118,20 @@ export interface AdminState {
   total: number;
   totalPages: number;
   loading: boolean;
+  actionLoading: boolean;
   error: string | null;
 
   getAllUser: (page?: number, limit?: number) => Promise<void>;
+
+
+  deleteUser: (userId: string) => Promise<void>;
+
+  promoteUser: (userId: string) => Promise<void>;
+
+  demoteUser: (userId: string) => Promise<void>;
+
+  blockUser: (userId: string) => Promise<void>;
+
+  activeUser: (userId: string) => Promise<void>;
   clearError: () => void;
 }
