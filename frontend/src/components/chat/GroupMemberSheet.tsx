@@ -29,7 +29,6 @@ const GroupMemberSheet = ({
   const { user } = useAuthStore();
   const { deleteGroup, leaveGroup, removeGroupMember } = useChatStore();
 
-  
   const [openAddMember, setOpenAddMember] = useState(false);
 
   const me = participants.find((p) => p._id === user?._id);
@@ -58,31 +57,22 @@ const GroupMemberSheet = ({
         return null;
     }
   };
-  const canRemoveMember = (
-  member: Participant
-) => {
-  // Không tự kick mình
-  if (member._id === user?._id) {
-    return false;
-  }
+  const canRemoveMember = (member: Participant) => {
+    // Không tự kick mình
+    if (member._id === user?._id) {
+      return false;
+    }
 
-  return isOwner;
-};
+    return isOwner;
+  };
 
-  const handleRemoveMember = async (
-  member: Participant
-) => {
-  const ok = window.confirm(
-    `Xóa ${member.displayName} khỏi nhóm?`
-  );
+  const handleRemoveMember = async (member: Participant) => {
+    const ok = window.confirm(`Xóa ${member.displayName} khỏi nhóm?`);
 
-  if (!ok) return;
+    if (!ok) return;
 
-  await removeGroupMember(
-    conversationId,
-    member._id
-  );
-};
+    await removeGroupMember(conversationId, member._id);
+  };
 
   const handleDeleteGroup = async () => {
     const ok = window.confirm("Bạn có chắc muốn giải tán nhóm không?");
@@ -94,16 +84,19 @@ const GroupMemberSheet = ({
     onOpenChange(false);
   };
   const handleLeaveGroup = async () => {
-  const ok = window.confirm(
-    "Bạn có chắc muốn rời nhóm?"
-  );
+    const ok = window.confirm("Bạn có chắc muốn rời nhóm?");
 
-  if (!ok) return;
+    if (!ok) return;
 
-  await leaveGroup(conversationId);
+    await leaveGroup(conversationId);
 
-  onOpenChange(false);
-};
+    onOpenChange(false);
+  };
+  const canAddFriend = (member: Participant) => {
+    const isMe = member._id === user?._id;
+
+    return !isMe;
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -186,34 +179,26 @@ const GroupMemberSheet = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-  {!isFriend && (
-    <Button
-      size="sm"
-      variant="secondary"
-    >
-      Kết bạn
-    </Button>
-  )}
+                        {!isFriend && canAddFriend(member) && (
+                          <Button size="sm" variant="secondary">
+                            Kết bạn
+                          </Button>
+                        )}
 
-  <Button
-    size="icon"
-    variant="outline"
-  >
-    <Eye className="size-4" />
-  </Button>
+                        <Button size="icon" variant="outline">
+                          <Eye className="size-4" />
+                        </Button>
 
-  {canRemoveMember(member) && (
-    <Button
-      size="icon"
-      variant="destructive"
-      onClick={() =>
-        handleRemoveMember(member)
-      }
-    >
-      <Trash2 className="size-4" />
-    </Button>
-  )}
-</div>
+                        {canRemoveMember(member) && (
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            onClick={() => handleRemoveMember(member)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        )}
+                      </div>
                       {/* <div className="flex items-center gap-2">
                         {!isFriend && (
                           <Button size="sm" variant="secondary">

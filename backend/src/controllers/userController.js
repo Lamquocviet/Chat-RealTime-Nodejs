@@ -1,5 +1,6 @@
 import { uploadImageFromBuffer } from "../middlewares/uploadMiddleware.js";
 import User from "../models/User.js";
+import { createAuditLog } from "../utils/auditHelper.js";
 
 export const authMe = async (req, res) => {
   try {
@@ -74,6 +75,17 @@ export const updateProfile = async (req, res) => {
       runValidators: true,
     }).select("_id username displayName email phone bio avatarUrl");
 
+    await createAuditLog({
+      actor: userId,
+      action: "UPDATE_USER",
+      targetType: "user",
+      targetId: userId,
+      details: {
+        changedFields: Object.keys(updateData),
+      },
+      ipAddress: req.ip,
+    });
+
     return res.status(200).json({
       user: updatedUser,
     });
@@ -126,6 +138,17 @@ export const uploadAvatar = async (req, res) => {
     if (!updatedUser.avatarUrl) {
       return res.status(400).json({ message: "Avatar trả về null" });
     }
+
+    await createAuditLog({
+      actor: userId,
+      action: "UPDATE_USER",
+      targetType: "user",
+      targetId: userId,
+      details: {
+        changedFields: ["avatarUrl"],
+      },
+      ipAddress: req.ip,
+    });
 
     return res.status(200).json({ avatarUrl: updatedUser.avatarUrl });
   } catch (error) {

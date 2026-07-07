@@ -6,6 +6,9 @@ export interface User {
   avatarUrl?: string;
   bio?: string;
   phone?: string;
+  role?: "user" | "admin";
+  status?: "active" | "blocked";
+  isOnline?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

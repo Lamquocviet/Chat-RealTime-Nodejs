@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import Session from "../models/Session.js";
+import { createAuditLog } from "../utils/auditHelper.js";
 
 const ACCESS_TOKEN_TTL = "30m"; // thuờng là dưới 15m
 const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 * 1000; // 14 ngày
@@ -29,11 +30,23 @@ export const signUp = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10); // salt = 10
 
     // tạo user mới
-    await User.create({
+    const newUser = await User.create({
       username,
       hashedPassword,
       email,
       displayName: `${firstName} ${lastName}`,
+    });
+
+    await createAuditLog({
+      actor: newUser._id,
+      action: "CREATE_USER",
+      targetType: "user",
+      targetId: newUser._id,
+      details: {
+        username: newUser.username,
+        email: newUser.email,
+      },
+      ipAddress: req.ip,
     });
 
     // return
@@ -97,6 +110,17 @@ export const signIn = async (req, res) => {
       maxAge: REFRESH_TOKEN_TTL,
     });
 
+    await createAuditLog({
+      actor: user._id,
+      action: "LOGIN",
+      targetType: "user",
+      targetId: user._id,
+      details: {
+        username: user.username,
+      },
+      ipAddress: req.ip,
+    });
+
     // trả access token về trong res
     return res
       .status(200)
@@ -109,6 +133,10 @@ export const signIn = async (req, res) => {
 
 export const signOut = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Chưa đăng nhập" });
+    }
+
     // lấy refresh token từ cookie
     const token = req.cookies?.refreshToken;
 
@@ -119,6 +147,17 @@ export const signOut = async (req, res) => {
       // xoá cookie
       res.clearCookie("refreshToken");
     }
+
+    await createAuditLog({
+      actor: req.user._id,
+      action: "LOGOUT",
+      targetType: "user",
+      targetId: req.user._id,
+      details: {
+        username: req.user.username,
+      },
+      ipAddress: req.ip,
+    });
 
     return res.sendStatus(204);
   } catch (error) {

@@ -111,3 +111,5 @@ export interface UserState {
   updateAvatarUrl: (formData: FormData) => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
 }
+
+
