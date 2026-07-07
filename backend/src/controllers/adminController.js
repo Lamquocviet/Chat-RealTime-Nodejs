@@ -282,44 +282,140 @@ export const activeUser = async (req, res) => {
   }
 };
 
-// Thống kê
+
 export const getUserStats = async (req, res) => {
   try {
-		const today = new Date();
-		today.setHours(0,0,0,0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-		const firstDayOfMonth = new Date (
-			today.getFullYear(),
-			today.getMonth(),
-			1
-		);
+    const firstDayOfMonth = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    );
 
-		const [totalUsers, activeUsers, blockedUsers, newUsersToday, newUsersMonth] = await Promise.all([
-			User.countDocuments(),
-			User.countDocuments({status: "active"}),
-			User.countDocuments({status: "blocked"}),
-			User.countDocuments({
-				createdAt: {$gte: today}
-			}),
-			User.countDocuments({
+    const nextMonth = new Date(
+      today.getFullYear(),
+      today.getMonth() + 1,
+      1
+    );
+
+    const [
+      totalUsers,
+      activeUsers,
+      blockedUsers,
+      newUsersToday,
+      newUsersMonth,
+      usersByDay,
+    ] = await Promise.all([
+      User.countDocuments(),
+
+      User.countDocuments({
+        status: "active",
+      }),
+
+      User.countDocuments({
+        status: "blocked",
+      }),
+
+      User.countDocuments({
+        createdAt: {
+          $gte: today,
+        },
+      }),
+
+      User.countDocuments({
         createdAt: {
           $gte: firstDayOfMonth,
         },
       }),
 
-		]);
-		return res.status(200).json({
-      totalUsers,
-      activeUsers,
-      blockedUsers,
-      onlineUsers: onlineUsers.size,
-      newUsersToday,
-      // newUsersThisMonth,
+      User.aggregate([
+        {
+          $match: {
+            createdAt: {
+              $gte: firstDayOfMonth,
+              $lt: nextMonth,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dayOfMonth: "$createdAt",
+            },
+            users: {
+              $sum: 1,
+            },
+          },
+        },
+        {
+          $sort: {
+            _id: 1,
+          },
+        },
+      ]),
+    ]);
+
+    const onlineCount = onlineUsers.size;
+
+    const inactiveUsers = Math.max(activeUsers - onlineCount, 0);
+
+    // số ngày trong tháng
+    const daysInMonth = new Date(
+      today.getFullYear(),
+      today.getMonth() + 1,
+      0
+    ).getDate();
+
+    const chart = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const found = usersByDay.find((d) => d._id === day);
+
+      chart.push({
+        day,
+        users: found ? found.users : 0,
+      });
+    }
+
+    return res.status(200).json({
+      summary: {
+        totalUsers,
+        activeUsers,
+        blockedUsers,
+        inactiveUsers,
+        onlineUsers: onlineCount,
+        newUsersToday,
+        newUsersMonth,
+      },
+
+      distribution: [
+        {
+          name: "Active Users",
+          value: activeUsers,
+        },
+        {
+          name: "Blocked Users",
+          value: blockedUsers,
+        },
+        {
+          name: "Online Users",
+          value: onlineCount,
+        },
+        {
+          name: "Inactive Users",
+          value: inactiveUsers,
+        },
+      ],
+
+      newUsersChart: chart,
     });
   } catch (error) {
-    console.error("Get user stats error:", error);
+    console.error(error);
+
     return res.status(500).json({
-      message: "Server error",
+      message: "Server Error",
     });
   }
 };

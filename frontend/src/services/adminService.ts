@@ -34,10 +34,13 @@ export const adminService = {
   },
 
   // Activate user
-
   async activeUser(userId: string): Promise<AdminActionResponse> {
     const res = await api.patch(`/admin/${userId}/active`);
     return res.data;
   },
 
+  async getUserStats() {
+    const res = await api.get("/admin/stats/users");
+    return res.data;
+  },
 };

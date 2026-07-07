@@ -2,7 +2,7 @@ import { toast } from "sonner";
 import { persist } from "zustand/middleware";
 import { create } from "zustand";
 import { adminService } from "@/services/adminService";
-import type { AdminState } from "@/types/store";
+import type { AdminState } from "@/types/admin";
 
 export const useAdminStore = create<AdminState>()(
   persist(
@@ -11,6 +11,11 @@ export const useAdminStore = create<AdminState>()(
       page: 1,
       total: 0,
       totalPages: 0,
+      summary: null,
+      distribution: [],
+      newUsersChart: [],
+
+      statsLoading: false,
       loading: false,
       actionLoading: false,
       error: null,
@@ -49,21 +54,18 @@ export const useAdminStore = create<AdminState>()(
 
           toast.success(res.message);
         } catch (error: any) {
-          toast.error(
-            error.response?.data?.message ?? "Delete user failed"
-          );
+          toast.error(error.response?.data?.message ?? "Delete user failed");
         } finally {
           set({ actionLoading: false });
         }
       },
-
 
       // Promote
       promoteUser: async (userId) => {
         try {
           set({ actionLoading: true });
 
-          const res = await adminService.promoteUser(userId);
+          await adminService.promoteUser(userId);
 
           set((state) => ({
             users: state.users.map((u) =>
@@ -72,15 +74,13 @@ export const useAdminStore = create<AdminState>()(
                     ...u,
                     role: "admin",
                   }
-                : u
+                : u,
             ),
           }));
 
           toast.success("Promoted to admin successfully");
         } catch (error: any) {
-          toast.error(
-            error.response?.data?.message ?? "Promote failed"
-          );
+          toast.error(error.response?.data?.message ?? "Promote failed");
         } finally {
           set({ actionLoading: false });
         }
@@ -92,7 +92,7 @@ export const useAdminStore = create<AdminState>()(
         try {
           set({ actionLoading: true });
 
-          const res = await adminService.demoteUser(userId);
+          await adminService.demoteUser(userId);
 
           set((state) => ({
             users: state.users.map((u) =>
@@ -101,15 +101,13 @@ export const useAdminStore = create<AdminState>()(
                     ...u,
                     role: "user",
                   }
-                : u
+                : u,
             ),
           }));
 
-            toast.success("Demoted to user successfully");
+          toast.success("Demoted to user successfully");
         } catch (error: any) {
-          toast.error(
-            error.response?.data?.message ?? "Demote failed"
-          );
+          toast.error(error.response?.data?.message ?? "Demote failed");
         } finally {
           set({ actionLoading: false });
         }
@@ -129,15 +127,13 @@ export const useAdminStore = create<AdminState>()(
                     ...u,
                     status: "blocked",
                   }
-                : u
+                : u,
             ),
           }));
 
           toast.success(res.message);
         } catch (error: any) {
-          toast.error(
-            error.response?.data?.message ?? "Block failed"
-          );
+          toast.error(error.response?.data?.message ?? "Block failed");
         } finally {
           set({ actionLoading: false });
         }
@@ -158,17 +154,39 @@ export const useAdminStore = create<AdminState>()(
                     ...u,
                     status: "active",
                   }
-                : u
+                : u,
             ),
           }));
 
           toast.success(res.message);
         } catch (error: any) {
-          toast.error(
-            error.response?.data?.message ?? "Activate failed"
-          );
+          toast.error(error.response?.data?.message ?? "Activate failed");
         } finally {
           set({ loading: false });
+        }
+      },
+      //stats
+      getUserStats: async () => {
+        try {
+          set({
+            statsLoading: true,
+          });
+
+          const res = await adminService.getUserStats();
+
+          set({
+            summary: res.summary,
+            distribution: res.distribution,
+            newUsersChart: res.newUsersChart,
+          });
+        } catch (error: any) {
+          toast.error(
+            error.response?.data?.message ?? "Cannot load statistics",
+          );
+        } finally {
+          set({
+            statsLoading: false,
+          });
         }
       },
       clearError: () => set({ error: null }),

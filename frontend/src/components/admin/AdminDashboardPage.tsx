@@ -23,12 +23,12 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { useAdminStore } from "@/stores/useAdminStore";
 
- 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
- 
+
 interface MetricCardProps {
   icon: React.ReactNode;
   iconBg: string;
@@ -37,48 +37,20 @@ interface MetricCardProps {
   trend: string;
   trendDirection: "up" | "down" | "live";
 }
- 
+
 interface NewUsersPoint {
   day: string;
   users: number;
 }
- 
+
 interface DistributionSlice {
   name: string;
   value: number;
   percent: string;
   color: string;
 }
- 
-/* ------------------------------------------------------------------ */
-/*  Static data                                                        */
-/* ------------------------------------------------------------------ */
- 
-const newUsersData: NewUsersPoint[] = [
-  { day: "May 1", users: 18 },
-  { day: "May 3", users: 32 },
-  { day: "May 5", users: 46 },
-  { day: "May 7", users: 40 },
-  { day: "May 9", users: 55 },
-  { day: "May 11", users: 50 },
-  { day: "May 13", users: 62 },
-  { day: "May 15", users: 58 },
-  { day: "May 17", users: 74 },
-  { day: "May 19", users: 68 },
-  { day: "May 21", users: 82 },
-  { day: "May 23", users: 96 },
-  { day: "May 25", users: 90 },
-  { day: "May 27", users: 100 },
-  { day: "May 29", users: 94 },
-  { day: "May 31", users: 108 },
-];
- 
-const distributionData: DistributionSlice[] = [
-  { name: "Active Users", value: 10221, percent: "82.1%", color: "#a855f7" },
-  { name: "Blocked Users", value: 342, percent: "2.7%", color: "#ef4444" },
-  { name: "Online Users", value: 563, percent: "4.5%", color: "#3b82f6" },
-  { name: "Inactive Users", value: 1324, percent: "10.7%", color: "#22c55e" },
-];
+
+const distributionColors = ["#a855f7", "#ef4444", "#3b82f6", "#22c55e"];
  
 /* ------------------------------------------------------------------ */
 /*  Small presentational components                                    */
@@ -143,12 +115,18 @@ const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
 const Dashboard: React.FC = () => {
   const [now, setNow] = useState<Date>(new Date());
   const [range, setRange] = useState<string>("This Month");
- 
+  const { summary, distribution, newUsersChart, getUserStats, statsLoading } =
+    useAdminStore();
+
+  useEffect(() => {
+    void getUserStats();
+  }, [getUserStats]);
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
- 
+
   const timeString = useMemo(
     () =>
       now.toLocaleTimeString("en-GB", {
@@ -160,57 +138,130 @@ const Dashboard: React.FC = () => {
     [now]
   );
  
-  const metrics: MetricCardProps[] = [
-    {
-      icon: <Users className="w-5 h-5 text-purple-500" />,
-      iconBg: "bg-purple-50",
-      label: "Total Users",
-      value: "12,450",
-      trend: "2.5% vs last month",
-      trendDirection: "up",
-    },
-    {
-      icon: <UserCheck className="w-5 h-5 text-emerald-500" />,
-      iconBg: "bg-emerald-50",
-      label: "Active Users",
-      value: "10,221",
-      trend: "3.1% vs last month",
-      trendDirection: "up",
-    },
-    {
-      icon: <Ban className="w-5 h-5 text-red-500" />,
-      iconBg: "bg-red-50",
-      label: "Blocked Users",
-      value: "342",
-      trend: "4.2% vs last month",
-      trendDirection: "down",
-    },
-    {
-      icon: <Wifi className="w-5 h-5 text-blue-500" />,
-      iconBg: "bg-blue-50",
-      label: "Online Users",
-      value: "563",
-      trend: "Live right now",
-      trendDirection: "live",
-    },
-    {
-      icon: <UserPlus className="w-5 h-5 text-orange-500" />,
-      iconBg: "bg-orange-50",
-      label: "New Users Today",
-      value: "58",
-      trend: "16.8% vs yesterday",
-      trendDirection: "up",
-    },
-    {
-      icon: <Calendar className="w-5 h-5 text-violet-600" />,
-      iconBg: "bg-violet-50",
-      label: "New Users This Month",
-      value: "1,245",
-      trend: "12.8% vs last month",
-      trendDirection: "up",
-    },
-  ];
- 
+  const chartData = useMemo<NewUsersPoint[]>(() => {
+    return newUsersChart.map((item) => ({
+      day: item.day.toString(),
+      users: item.users,
+    }));
+  }, [newUsersChart]);
+
+  const distributionData = useMemo<DistributionSlice[]>(() => {
+    const total = distribution.reduce((sum, item) => sum + item.value, 0);
+
+    return distribution.map((item, index) => ({
+      name: item.name,
+      value: item.value,
+      percent: total > 0 ? `${((item.value / total) * 100).toFixed(1)}%` : "0%",
+      color: distributionColors[index % distributionColors.length],
+    }));
+  }, [distribution]);
+
+  const metrics: MetricCardProps[] = useMemo(() => {
+    if (!summary) {
+      return [
+        {
+          icon: <Users className="w-5 h-5 text-purple-500" />,
+          iconBg: "bg-purple-50",
+          label: "Total Users",
+          value: statsLoading ? "..." : "0",
+          trend: "Loading stats",
+          trendDirection: "up",
+        },
+        {
+          icon: <UserCheck className="w-5 h-5 text-emerald-500" />,
+          iconBg: "bg-emerald-50",
+          label: "Active Users",
+          value: statsLoading ? "..." : "0",
+          trend: "Loading stats",
+          trendDirection: "up",
+        },
+        {
+          icon: <Ban className="w-5 h-5 text-red-500" />,
+          iconBg: "bg-red-50",
+          label: "Blocked Users",
+          value: statsLoading ? "..." : "0",
+          trend: "Loading stats",
+          trendDirection: "down",
+        },
+        {
+          icon: <Wifi className="w-5 h-5 text-blue-500" />,
+          iconBg: "bg-blue-50",
+          label: "Online Users",
+          value: statsLoading ? "..." : "0",
+          trend: "Loading stats",
+          trendDirection: "live",
+        },
+        {
+          icon: <UserPlus className="w-5 h-5 text-orange-500" />,
+          iconBg: "bg-orange-50",
+          label: "New Users Today",
+          value: statsLoading ? "..." : "0",
+          trend: "Loading stats",
+          trendDirection: "up",
+        },
+        {
+          icon: <Calendar className="w-5 h-5 text-violet-600" />,
+          iconBg: "bg-violet-50",
+          label: "New Users This Month",
+          value: statsLoading ? "..." : "0",
+          trend: "Loading stats",
+          trendDirection: "up",
+        },
+      ];
+    }
+
+    return [
+      {
+        icon: <Users className="w-5 h-5 text-purple-500" />,
+        iconBg: "bg-purple-50",
+        label: "Total Users",
+        value: summary.totalUsers.toLocaleString(),
+        trend: `${summary.newUsersMonth.toLocaleString()} joined this month`,
+        trendDirection: "up",
+      },
+      {
+        icon: <UserCheck className="w-5 h-5 text-emerald-500" />,
+        iconBg: "bg-emerald-50",
+        label: "Active Users",
+        value: summary.activeUsers.toLocaleString(),
+        trend: `${summary.inactiveUsers.toLocaleString()} inactive`,
+        trendDirection: "up",
+      },
+      {
+        icon: <Ban className="w-5 h-5 text-red-500" />,
+        iconBg: "bg-red-50",
+        label: "Blocked Users",
+        value: summary.blockedUsers.toLocaleString(),
+        trend: `${summary.blockedUsers.toLocaleString()} currently blocked`,
+        trendDirection: "down",
+      },
+      {
+        icon: <Wifi className="w-5 h-5 text-blue-500" />,
+        iconBg: "bg-blue-50",
+        label: "Online Users",
+        value: summary.onlineUsers.toLocaleString(),
+        trend: "Live right now",
+        trendDirection: "live",
+      },
+      {
+        icon: <UserPlus className="w-5 h-5 text-orange-500" />,
+        iconBg: "bg-orange-50",
+        label: "New Users Today",
+        value: summary.newUsersToday.toLocaleString(),
+        trend: "Joined today",
+        trendDirection: "up",
+      },
+      {
+        icon: <Calendar className="w-5 h-5 text-violet-600" />,
+        iconBg: "bg-violet-50",
+        label: "New Users This Month",
+        value: summary.newUsersMonth.toLocaleString(),
+        trend: "Joined this month",
+        trendDirection: "up",
+      },
+    ];
+  }, [statsLoading, summary]);
+
   return (
     
       <div className="p-0">
@@ -270,7 +321,10 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={newUsersData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart
+                  data={chartData}
+                  margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+                >
                   <defs>
                     <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#a855f7" stopOpacity={0.35} />
@@ -283,12 +337,10 @@ const Dashboard: React.FC = () => {
                     tickLine={false}
                     axisLine={false}
                     tick={{ fill: "#94a3b8", fontSize: 11 }}
-                    interval={1}
-                    ticks={["May 1", "May 5", "May 10", "May 15", "May 20", "May 25", "May 31"]}
+                    interval="preserveStartEnd"
                   />
                   <YAxis
-                    domain={[0, 120]}
-                    ticks={[0, 20, 40, 60, 80, 100, 120]}
+                    domain={[0, "dataMax + 10"]}
                     tickLine={false}
                     axisLine={false}
                     tick={{ fill: "#94a3b8", fontSize: 11 }}
@@ -339,7 +391,7 @@ const Dashboard: React.FC = () => {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <span className="text-sm font-bold text-slate-700">
-                    82.1%
+                    {distributionData[0]?.percent ?? "0%"}
                   </span>
                 </div>
               </div>
@@ -379,10 +431,14 @@ const Dashboard: React.FC = () => {
             </h3>
             <p className="text-sm text-slate-500">
               You have{" "}
-              <span className="font-bold text-blue-500">563</span> users
-              online right now.{" "}
-              <span className="font-bold text-emerald-500">58</span> new
-              users joined today.
+              <span className="font-bold text-blue-500">
+                {summary?.onlineUsers?.toLocaleString() ?? 0}
+              </span>{" "}
+              users online right now.{" "}
+              <span className="font-bold text-emerald-500">
+                {summary?.newUsersToday?.toLocaleString() ?? 0}
+              </span>{" "}
+              new users joined today.
             </p>
           </div>
         </div>

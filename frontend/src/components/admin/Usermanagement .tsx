@@ -3,14 +3,11 @@ import {
   Search,
   ChevronDown,
   Download,
-  Eye,
-  KeyRound,
   Trash2,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
-  MoreHorizontal,
   ShieldCheck,
   ShieldOff,
   UserX,
@@ -29,7 +26,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -154,7 +150,19 @@ const ONLINE_OPTIONS = ["All", "Online", "Offline"];
 const PAGE_SIZE_OPTIONS = ["10 per page", "25 per page", "50 per page"];
 
 const UserManagement: React.FC = () => {
-  const { users, total, totalPages, loading, error, getAllUser, deleteUser, promoteUser, demoteUser, blockUser, activeUser } = useAdminStore();
+  const {
+    users,
+    total,
+    totalPages,
+    loading,
+    error,
+    getAllUser,
+    deleteUser,
+    promoteUser,
+    demoteUser,
+    blockUser,
+    activeUser,
+  } = useAdminStore();
   const [search, setSearch] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("All Roles");
   const [statusFilter, setStatusFilter] = useState<string>("All Statuses");
@@ -286,35 +294,37 @@ const UserManagement: React.FC = () => {
     saveAs(blob, `users-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
   const handleDelete = async (userId: string) => {
-  if (!window.confirm("Are you sure you want to permanently delete this user?"))
-    return;
+    if (
+      !window.confirm("Are you sure you want to permanently delete this user?")
+    )
+      return;
 
-  await deleteUser(userId);
-};
+    await deleteUser(userId);
+  };
 
-const handlePromote = async (userId: string) => {
-  if (!window.confirm("Promote this user to Admin?")) return;
+  const handlePromote = async (userId: string) => {
+    if (!window.confirm("Promote this user to Admin?")) return;
 
-  await promoteUser(userId);
-};
+    await promoteUser(userId);
+  };
 
-const handleDemote = async (userId: string) => {
-  if (!window.confirm("Remove admin privileges?")) return;
+  const handleDemote = async (userId: string) => {
+    if (!window.confirm("Remove admin privileges?")) return;
 
-  await demoteUser(userId);
-};
+    await demoteUser(userId);
+  };
 
-const handleBlock = async (userId: string) => {
-  if (!window.confirm("Block this account?")) return;
+  const handleBlock = async (userId: string) => {
+    if (!window.confirm("Block this account?")) return;
 
-  await blockUser(userId);
-};
+    await blockUser(userId);
+  };
 
-const handleActivate = async (userId: string) => {
-  if (!window.confirm("Activate this account?")) return;
+  const handleActivate = async (userId: string) => {
+    if (!window.confirm("Activate this account?")) return;
 
-  await activeUser(userId);
-};
+    await activeUser(userId);
+  };
 
   return (
     <div className="min-h-screen ">
@@ -572,7 +582,10 @@ const handleActivate = async (userId: string) => {
                                   </div>
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => handleDemote(u.id)}>
+                                <DropdownMenuItem
+                                  className="rounded-lg cursor-pointer"
+                                  onClick={() => handleDemote(u.id)}
+                                >
                                   <ShieldOff className="w-4 h-4 mr-3 text-orange-500" />
                                   <div>
                                     <p className="font-medium">
@@ -590,7 +603,10 @@ const handleActivate = async (userId: string) => {
                               {/* Block */}
 
                               {u.status === "Active" ? (
-                                <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => handleBlock(u.id)}>
+                                <DropdownMenuItem
+                                  className="rounded-lg cursor-pointer"
+                                  onClick={() => handleBlock(u.id)}
+                                >
                                   <UserX className="w-4 h-4 mr-3 text-amber-500" />
                                   <div>
                                     <p className="font-medium">Block User</p>
@@ -600,7 +616,10 @@ const handleActivate = async (userId: string) => {
                                   </div>
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => handleActivate(u.id)}>
+                                <DropdownMenuItem
+                                  className="rounded-lg cursor-pointer"
+                                  onClick={() => handleActivate(u.id)}
+                                >
                                   <UserCheck className="w-4 h-4 mr-3 text-emerald-600" />
                                   <div>
                                     <p className="font-medium">Activate User</p>
@@ -613,8 +632,10 @@ const handleActivate = async (userId: string) => {
 
                               <DropdownMenuSeparator />
 
-                              <DropdownMenuItem className="rounded-lg cursor-pointer text-red-600 focus:text-red-600" 
-                                onClick={() => handleDelete(u.id)}>
+                              <DropdownMenuItem
+                                className="rounded-lg cursor-pointer text-red-600 focus:text-red-600"
+                                onClick={() => handleDelete(u.id)}
+                              >
                                 <Trash2 className="w-4 h-4 mr-3" />
 
                                 <div>

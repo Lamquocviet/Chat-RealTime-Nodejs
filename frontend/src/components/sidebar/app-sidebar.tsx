@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Moon, Sun, LayoutGrid, FileText } from "lucide-react";
+import { Moon, Sun, LayoutGrid, FileText, FileTextIcon } from "lucide-react";
 import { Switch } from "../ui/switch";
 import CreateNewChat from "../chat/CreateNewChat";
 import NewGroupChatModal from "../chat/NewGroupChatModal";
@@ -23,7 +23,7 @@ import { useThemeStore } from "@/stores/useThemeStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import ConversationSkeleton from "../skeleton/ConversationSkeleton";
 import { useChatStore } from "@/stores/useChatStore";
-import { Link, NavLink } from "react-router";
+import { NavLink } from "react-router";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isDark, toggleTheme } = useThemeStore();
@@ -123,7 +123,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         }
                       `}
                       >
-                        <LayoutGrid className="size-4" />
+                        <FileTextIcon className="size-4" />
                         <span>Audit Logs</span>
                       </SidebarMenuButton>
                     )}
