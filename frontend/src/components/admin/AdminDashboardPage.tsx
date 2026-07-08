@@ -72,15 +72,15 @@ const MetricCard: React.FC<MetricCardProps> = ({
       : "text-emerald-500";
  
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col gap-4 min-w-0">
+    <div className="bg-card rounded-2xl shadow-sm border border-border p-5 flex flex-col gap-4 min-w-0">
       <div
         className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}`}
       >
         {icon}
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-sm text-slate-400 truncate">{label}</span>
-        <span className="text-2xl font-bold text-slate-800 tabular-nums">
+        <span className="text-sm text-muted-foreground truncate">{label}</span>
+        <span className="text-2xl font-bold text-foreground tabular-nums">
           {value}
         </span>
         <div className={`flex items-center gap-1 text-xs font-medium ${trendColor}`}>
@@ -99,8 +99,8 @@ const MetricCard: React.FC<MetricCardProps> = ({
 const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
-        <div className="text-slate-300 mb-0.5">{label}</div>
+      <div className="bg-card text-foreground text-xs rounded-lg px-3 py-2 shadow-lg border border-border">
+        <div className="text-muted-foreground mb-0.5">{label}</div>
         <div className="font-semibold">{payload[0].value} new users</div>
       </div>
     );
@@ -264,26 +264,26 @@ const Dashboard: React.FC = () => {
 
   return (
     
-      <div className="p-0">
+      <div className="min-h-screen bg-background p-0">
       <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-200 pb-6">
+        <div className="flex items-start justify-between border-b border-border pb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">
+            <h1 className="text-2xl font-bold text-foreground">
               Admin Dashboard
             </h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Manage users, monitor system statistics and audit activities.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-500 tabular-nums">
+            <span className="text-sm font-medium text-muted-foreground tabular-nums">
               {timeString}
             </span>
             <button
               type="button"
               onClick={() => setNow(new Date())}
-              className="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+              className="w-9 h-9 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
@@ -301,18 +301,18 @@ const Dashboard: React.FC = () => {
         {/* Charts row */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* New Users This Month */}
-          <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div className="lg:col-span-3 bg-card rounded-2xl shadow-sm border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-purple-500" />
-                <h2 className="text-sm font-semibold text-slate-700">
+                <h2 className="text-sm font-semibold text-foreground">
                   New Users This Month
                 </h2>
               </div>
               <select
                 value={range}
                 onChange={(e) => setRange(e.target.value)}
-                className="text-xs font-medium text-slate-500 bg-white border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                className="text-xs font-medium text-muted-foreground bg-background border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
                 <option>This Month</option>
                 <option>Last Month</option>
@@ -361,7 +361,7 @@ const Dashboard: React.FC = () => {
           </div>
  
           {/* Users Distribution */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div className="lg:col-span-2 bg-card rounded-2xl shadow-sm border border-border p-6">
             <div className="flex items-center gap-2 mb-6">
               <TrendingUp className="w-4 h-4 text-purple-500" />
               <h2 className="text-sm font-semibold text-slate-700">
@@ -390,7 +390,7 @@ const Dashboard: React.FC = () => {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className="text-sm font-bold text-slate-700">
+                  <span className="text-sm font-bold text-foreground">
                     {distributionData[0]?.percent ?? "0%"}
                   </span>
                 </div>
@@ -406,11 +406,11 @@ const Dashboard: React.FC = () => {
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: slice.color }}
                       />
-                      <span className="text-slate-600 font-medium truncate">
+                      <span className="text-foreground/80 font-medium truncate">
                         {slice.name}
                       </span>
                     </div>
-                    <span className="text-slate-400 shrink-0 ml-2 whitespace-nowrap">
+                    <span className="text-muted-foreground shrink-0 ml-2 whitespace-nowrap">
                       {slice.value.toLocaleString()} ({slice.percent})
                     </span>
                   </div>
@@ -421,15 +421,15 @@ const Dashboard: React.FC = () => {
         </div>
  
         {/* Summary banner */}
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-2xl p-5 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
+        <div className="bg-gradient-to-r from-primary/10 via-background to-accent/20 border border-border rounded-2xl p-5 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-card flex items-center justify-center shrink-0 shadow-sm">
             <ClipboardList className="w-4 h-4 text-purple-500" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-700 mb-0.5">
+            <h3 className="text-sm font-semibold text-foreground mb-0.5">
               Summary
             </h3>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               You have{" "}
               <span className="font-bold text-blue-500">
                 {summary?.onlineUsers?.toLocaleString() ?? 0}

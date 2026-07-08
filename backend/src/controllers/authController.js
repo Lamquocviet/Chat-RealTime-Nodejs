@@ -203,3 +203,98 @@ export const refreshToken = async (req, res) => {
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
+
+// Đổi mật khẩu
+export const changePassword = async (req, res) => {
+    try {
+
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({
+                message: "All fields are required",
+            });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({
+                message: "Passwords do not match",
+            });
+        }
+
+        const passwordRegex =
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+        if (!passwordRegex.test(newPassword)) {
+            return res.status(400).json({
+                message:
+                    "Password must contain uppercase, lowercase and number.",
+            });
+        }
+
+        const user = await User.findById(req.user._id)
+            .select("+hashedPassword");
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        const matched = await bcrypt.compare(
+            currentPassword,
+            user.hashedPassword
+        );
+
+        if (!matched) {
+            return res.status(401).json({
+                message: "Current password is incorrect",
+            });
+        }
+
+        const samePassword = await bcrypt.compare(
+            newPassword,
+            user.hashedPassword
+        );
+
+        if (samePassword) {
+            return res.status(400).json({
+                message: "New password must be different",
+            });
+        }
+
+        user.hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await user.save();
+
+        // logout all devices
+        await Session.deleteMany({
+            userId: user._id,
+        });
+
+        res.clearCookie("refreshToken");
+
+        await createAuditLog({
+            actor: user._id,
+            action: "CHANGE_PASSWORD",
+            targetType: "user",
+            targetId: user._id,
+            ipAddress: req.ip,
+        });
+        
+        console.log(req.headers["content-type"]);
+console.log(req.body);
+        return res.status(200).json({
+            message: "Password changed successfully",
+            logout: true,
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Server Error",
+        });
+    }
+};
