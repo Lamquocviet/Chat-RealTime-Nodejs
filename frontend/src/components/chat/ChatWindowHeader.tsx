@@ -10,7 +10,7 @@ import GroupChatAvatar from "./GroupChatAvatar";
 import { useSocketStore } from "@/stores/useSocketStore";
 import ViewUserProfileDialog from "@/components/profile/ViewUserProfileDialog";
 import { useCallStore } from "@/stores/useCallStore";
-import { Video, PanelLeftClose, UserRound } from "lucide-react";
+import { Phone, Video, PanelLeftClose, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import GroupMemberSheet from "./GroupMemberSheet";
