@@ -752,19 +752,7 @@ const FilterSelect: React.FC<{
   </div>
 );
 
-const ActionButton: React.FC<{
-  icon: React.ReactNode;
-  color: string;
-  label: string;
-}> = ({ icon, color, label }) => (
-  <button
-    type="button"
-    aria-label={label}
-    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${color}`}
-  >
-    {icon}
-  </button>
-);
+
 
 const PageArrow: React.FC<{
   icon: React.ReactNode;
