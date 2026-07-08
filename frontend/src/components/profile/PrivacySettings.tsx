@@ -100,7 +100,7 @@ const ChangePasswordDialog = ({
       const response = await authService.changePassword(
         form.currentPassword,
         form.newPassword,
-        form.confirmPassword
+        form.confirmPassword,
       );
 
       toast.success(response.message || "Đổi mật khẩu thành công");
@@ -126,7 +126,12 @@ const ChangePasswordDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !isSubmitting && (o ? onOpenChange(o) : resetAndClose())}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) =>
+        !isSubmitting && (o ? onOpenChange(o) : resetAndClose())
+      }
+    >
       <DialogContent className="glass-strong border-border/30 sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -167,7 +172,9 @@ const ChangePasswordDialog = ({
               </button>
             </div>
             {errors.currentPassword && (
-              <p className="text-sm text-destructive">{errors.currentPassword}</p>
+              <p className="text-sm text-destructive">
+                {errors.currentPassword}
+              </p>
             )}
           </div>
 
@@ -231,7 +238,9 @@ const ChangePasswordDialog = ({
               </button>
             </div>
             {errors.confirmPassword && (
-              <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+              <p className="text-sm text-destructive">
+                {errors.confirmPassword}
+              </p>
             )}
           </div>
         </div>
@@ -297,13 +306,15 @@ const PrivacySettings = () => {
             Chặn & Báo cáo
           </Button>
         </div>
-
-        <div className="pt-4 border-t border-border/30">
-          <h4 className="font-medium mb-3 text-destructive">Khu vực nguy hiểm</h4>
+        
+        {/* <div className="pt-4 border-t border-border/30">
+          <h4 className="font-medium mb-3 text-destructive">
+            Khu vực nguy hiểm
+          </h4>
           <Button variant="destructive" className="w-full">
             Xoá tài khoản
           </Button>
-        </div>
+        </div> */}
       </CardContent>
 
       <ChangePasswordDialog

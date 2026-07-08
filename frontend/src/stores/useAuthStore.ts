@@ -52,10 +52,16 @@ export const useAuthStore = create<AuthState>()(
           await get().fetchMe();
           useChatStore.getState().fetchConversations();
 
-          toast.success("Chào mừng bạn quay lại với Moji 🎉");
-        } catch (error) {
+          toast.success("Chào mừng bạn quay lại với Message 🎉");
+          return true;
+        } catch (error: any) {
           console.error(error);
-          toast.error("Đăng nhập không thành công!");
+          const errorMessage =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Đăng nhập không thành công!";
+          toast.error(errorMessage);
+          return false;
         } finally {
           set({ loading: false });
         }

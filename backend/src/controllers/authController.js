@@ -84,6 +84,11 @@ export const signIn = async (req, res) => {
         .json({ message: "username hoặc password không chính xác" });
     }
 
+    // chặn user đã bị khóa
+    if (user.status === "blocked") {
+      return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa" });
+    }
+
     // nếu khớp, tạo accessToken với JWT
     const accessToken = jwt.sign(
       { userId: user._id },
