@@ -1,4 +1,4 @@
-# Moji Chat 🚀
+# Message 🚀
 
 **Message** là một ứng dụng chat fullstack với frontend React + TypeScript và backend Node.js + Express. Dự án hỗ trợ chat riêng tư, nhóm, quản lý bạn bè, gọi video real-time và bảng điều khiển admin.
 
