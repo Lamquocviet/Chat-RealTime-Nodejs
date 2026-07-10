@@ -13,6 +13,8 @@ import UserManagement from "./components/admin/Usermanagement ";
 import AdminLayout from "./pages/AdminLayout";
 import AuditLogs from "./components/admin/AuditLog";
 import Dashboard from "./components/admin/AdminDashboardPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
   const { isDark, setTheme } = useThemeStore();
@@ -38,6 +40,8 @@ function App() {
           {/* public routes */}
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* protected routes - Chat */}
           <Route element={<ProtectedRoute />}>

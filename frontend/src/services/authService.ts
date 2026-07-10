@@ -52,4 +52,22 @@ export const authService = {
     );
     return res.data;
   },
+
+  forgotPassword: async (email: string) => {
+    const res = await api.post(
+      "/auth/forgot-password",
+      { email },
+      { withCredentials: true }
+    );
+    return res.data;
+  },
+
+  resetPassword: async (token: string, password: string, confirmPassword: string) => {
+    const res = await api.post(
+      "/auth/reset-password",
+      { token, password, confirmPassword },
+      { withCredentials: true }
+    );
+    return res.data;
+  },
 };

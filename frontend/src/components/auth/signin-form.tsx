@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Label } from "../ui/label";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useNavigate } from "react-router";
+import { Link } from "react-router";
 
 const signInSchema = z.object({
   username: z.string().min(3, "Tên đăng nhập phải có ít nhất 3 ký tự"),
@@ -61,7 +62,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
 
                 <h1 className="text-2xl font-bold">Chào mừng quay lại</h1>
                 <p className="text-muted-foreground text-balance">
-                  Đăng nhập vào tài khoản Moji của bạn
+                  Đăng nhập vào tài khoản Message của bạn
                 </p>
               </div>
 
@@ -112,8 +113,17 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
                 className="w-full"
                 disabled={isSubmitting}
               >
-                Đăng nhập
+                {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
+
+              <div className="text-center text-sm">
+                <Link
+                  to="/forgot-password"
+                  className="underline underline-offset-4"
+                >
+                  Quên mật khẩu?
+                </Link>
+              </div>
 
               <div className="text-center text-sm">
                 Chưa có tài khoản?{" "}

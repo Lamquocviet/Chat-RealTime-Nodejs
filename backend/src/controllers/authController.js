@@ -4,7 +4,9 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import Session from "../models/Session.js";
+import PasswordResetToken from "../models/PasswordResetToken.js";
 import { createAuditLog } from "../utils/auditHelper.js";
+import { sendResetPasswordEmail } from "../../services/emailService.js";
 
 const ACCESS_TOKEN_TTL = "30m"; // thuờng là dưới 15m
 const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 * 1000; // 14 ngày
@@ -24,6 +26,12 @@ export const signUp = async (req, res) => {
 
     if (duplicate) {
       return res.status(409).json({ message: "username đã tồn tại" });
+    }
+
+    const duplicateEmail = await User.findOne({email});
+    if(duplicateEmail)
+    {
+      return res.status(409).json({message: "email đã tồn tại"})
     }
 
     // mã hoá password
@@ -302,4 +310,170 @@ console.log(req.body);
             message: "Server Error",
         });
     }
+};
+// forget password
+export const forgotPassword = async (req, res) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    // Không tiết lộ email tồn tại hay không
+    if (!user) {
+      return res.status(200).json({
+        message: "If the email exists, reset instructions have been sent.",
+      });
+    }
+
+    await PasswordResetToken.deleteMany({
+      userId: user._id,
+    });
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    await PasswordResetToken.create({
+      userId: user._id,
+      tokenHash,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      createdByIp: req.ip,
+    });
+
+    const clientUrl = process.env.CLIENT_URL;
+    const link = `${clientUrl}/reset-password?token=${rawToken}`;
+
+    await sendResetPasswordEmail(user.email, link);
+
+    await createAuditLog({
+      actor: user._id,
+      action: "FORGOT_PASSWORD_REQUEST",
+      targetType: "user",
+      targetId: user._id,
+      details: {
+        email: user.email,
+      },
+      ipAddress: req.ip,
+    });
+
+    return res.status(200).json({
+      message: "If the email exists, reset instructions have been sent.",
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+// reset password
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password, confirmPassword } = req.body;
+
+    if (!token || !password || !confirmPassword) {
+      return res.status(400).json({
+        message: "Missing fields",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        message: "Passwords do not match",
+      });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: "Weak password",
+      });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const resetToken = await PasswordResetToken.findOne({
+      tokenHash,
+      used: false,
+    });
+
+    if (!resetToken) {
+      return res.status(400).json({
+        message: "Invalid token",
+      });
+    }
+
+    if (resetToken.expiresAt < new Date()) {
+      return res.status(400).json({
+        message: "Token expired",
+      });
+    }
+
+    const user = await User.findById(resetToken.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const samePassword = await bcrypt.compare(password, user.hashedPassword);
+
+    if (samePassword) {
+      return res.status(400).json({
+        message: "New password must be different",
+      });
+    }
+
+    user.hashedPassword = await bcrypt.hash(password, 10);
+
+    await user.save();
+
+    resetToken.used = true;
+    await resetToken.save();
+
+    await PasswordResetToken.deleteMany({
+      userId: user._id,
+      _id: { $ne: resetToken._id },
+    });
+
+    await Session.deleteMany({
+      userId: user._id,
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+
+    await createAuditLog({
+      actor: user._id,
+      action: "RESET_PASSWORD",
+      targetType: "user",
+      targetId: user._id,
+      details: {
+        email: user.email,
+      },
+      ipAddress: req.ip,
+    });
+
+    return res.status(200).json({
+      message: "Password reset successfully",
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
 };
