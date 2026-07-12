@@ -5,6 +5,7 @@ import User from "../models/User.js";
 // authorization - xác minh user là ai
 export const protectedRoute = (req, res, next) => {
   try {
+    console.log("Protected:", req.method, req.originalUrl);
     // lấy token từ header
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1]; // Bearer <token>

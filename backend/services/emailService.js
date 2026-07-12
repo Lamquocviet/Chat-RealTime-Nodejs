@@ -1,9 +1,13 @@
 import { transporter } from "../config/mailer.js";
 
-
 export const sendResetPasswordEmail = async (email, link) => {
+  console.log("Sending email to:", email);
+  console.log("Reset link:", link);
+
+  const senderEmail = process.env.EMAIL_USER || transporter.options?.auth?.user;
+
   await transporter.sendMail({
-    from: process.env.EMAIL_USER,
+    from: senderEmail,
     to: email,
     subject: "Reset Password",
     html: `

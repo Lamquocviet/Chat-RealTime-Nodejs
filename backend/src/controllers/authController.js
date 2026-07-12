@@ -11,24 +11,37 @@ import { sendResetPasswordEmail } from "../../services/emailService.js";
 const ACCESS_TOKEN_TTL = "30m"; // thuờng là dưới 15m
 const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 * 1000; // 14 ngày
 
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: REFRESH_TOKEN_TTL,
+  };
+};
+
 export const signUp = async (req, res) => {
   try {
     const { username, password, email, firstName, lastName } = req.body;
+    const normalizedUsername = typeof username === "string" ? username.trim().toLowerCase() : "";
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
-    if (!username || !password || !email || !firstName || !lastName) {
+    if (!normalizedUsername || !password || !normalizedEmail || !firstName || !lastName) {
       return res.status(400).json({
         message: "Không thể thiếu username, password, email, firstName, và lastName",
       });
     }
 
     // kiểm tra username tồn tại chưa
-    const duplicate = await User.findOne({ username });
+    const duplicate = await User.findOne({ username: normalizedUsername });
 
     if (duplicate) {
       return res.status(409).json({ message: "username đã tồn tại" });
     }
 
-    const duplicateEmail = await User.findOne({email});
+    const duplicateEmail = await User.findOne({ email: normalizedEmail });
     if(duplicateEmail)
     {
       return res.status(409).json({message: "email đã tồn tại"})
@@ -39,9 +52,9 @@ export const signUp = async (req, res) => {
 
     // tạo user mới
     const newUser = await User.create({
-      username,
+      username: normalizedUsername,
       hashedPassword,
-      email,
+      email: normalizedEmail,
       displayName: `${firstName} ${lastName}`,
     });
 
@@ -69,13 +82,16 @@ export const signIn = async (req, res) => {
   try {
     // lấy inputs
     const { username, password } = req.body;
+    const normalizedIdentifier = typeof username === "string" ? username.trim().toLowerCase() : "";
 
-    if (!username || !password) {
+    if (!normalizedIdentifier || !password) {
       return res.status(400).json({ message: "Thiếu username hoặc password." });
     }
 
     // lấy hashedPassword trong db để so với password input
-    const user = await User.findOne({ username });
+    const user = await User.findOne({
+      $or: [{ username: normalizedIdentifier }, { email: normalizedIdentifier }],
+    });
 
     if (!user) {
       return res
@@ -116,12 +132,7 @@ export const signIn = async (req, res) => {
     });
 
     // trả refresh token về trong cookie
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none", //backend, frontend deploy riêng
-      maxAge: REFRESH_TOKEN_TTL,
-    });
+    res.cookie("refreshToken", refreshToken, getCookieOptions());
 
     await createAuditLog({
       actor: user._id,
@@ -345,8 +356,8 @@ export const forgotPassword = async (req, res) => {
       createdByIp: req.ip,
     });
 
-    const clientUrl = process.env.CLIENT_URL;
-    const link = `${clientUrl}/reset-password?token=${rawToken}`;
+    const clientUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+    const link = `${clientUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
     await sendResetPasswordEmail(user.email, link);
 
@@ -377,8 +388,9 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { token, password, confirmPassword } = req.body;
+    const normalizedToken = typeof token === "string" ? decodeURIComponent(token).trim() : "";
 
-    if (!token || !password || !confirmPassword) {
+    if (!normalizedToken || !password || !confirmPassword) {
       return res.status(400).json({
         message: "Missing fields",
       });
@@ -398,7 +410,7 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const tokenHash = crypto.createHash("sha256").update(normalizedToken).digest("hex");
 
     const resetToken = await PasswordResetToken.findOne({
       tokenHash,
@@ -451,8 +463,8 @@ export const resetPassword = async (req, res) => {
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
 
     await createAuditLog({

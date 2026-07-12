@@ -30,6 +30,7 @@ export const createAuditLog = async ({
 
     return log;
   } catch (error) {
-    console.error("Create audit log error:", error);
+    console.warn("Create audit log skipped:", error.message);
+    return null;
   }
 };

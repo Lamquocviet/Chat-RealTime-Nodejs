@@ -31,7 +31,14 @@ const PORT = process.env.PORT || 5001;
 // middlewares
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(
+  cors({
+    origin: [process.env.CLIENT_URL, "http://localhost:5173", "http://127.0.0.1:5173"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // public routes
 app.use("/api/auth", authRoute);
@@ -49,5 +56,6 @@ app.use("/api/messages", messageRoute);
 connectDB().then(() => {
   server.listen(PORT, () => {
     console.log(`server bắt đầu trên cổng ${PORT}`);
+    
   });
 });

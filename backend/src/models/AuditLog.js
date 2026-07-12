@@ -29,6 +29,7 @@ const auditLogSchema = new mongoose.Schema(
 
         "CHANGE_ROLE",
 
+        "CHANGE_PASSWORD",
 
         "CREATE_GROUP",
 
@@ -36,13 +37,15 @@ const auditLogSchema = new mongoose.Schema(
 
         "DELETE_GROUP",
 
-
         "DELETE_MESSAGE",
-
 
         "LOGIN",
 
-        "LOGOUT"
+        "LOGOUT",
+
+        "FORGOT_PASSWORD_REQUEST",
+
+        "RESET_PASSWORD"
 
       ],
       required:true
