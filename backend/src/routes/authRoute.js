@@ -16,7 +16,7 @@ router.post("/signup", signUp);
 
 router.post("/signin", signIn);
 
-router.post("/signout", signOut);
+router.post("/signout", protectedRoute, signOut);
 
 router.post("/refresh", refreshToken);
 

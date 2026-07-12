@@ -25,12 +25,21 @@ const getCookieOptions = () => {
 export const signUp = async (req, res) => {
   try {
     const { username, password, email, firstName, lastName } = req.body;
-    const normalizedUsername = typeof username === "string" ? username.trim().toLowerCase() : "";
-    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const normalizedUsername =
+      typeof username === "string" ? username.trim().toLowerCase() : "";
+    const normalizedEmail =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
 
-    if (!normalizedUsername || !password || !normalizedEmail || !firstName || !lastName) {
+    if (
+      !normalizedUsername ||
+      !password ||
+      !normalizedEmail ||
+      !firstName ||
+      !lastName
+    ) {
       return res.status(400).json({
-        message: "Không thể thiếu username, password, email, firstName, và lastName",
+        message:
+          "Không thể thiếu username, password, email, firstName, và lastName",
       });
     }
 
@@ -42,9 +51,8 @@ export const signUp = async (req, res) => {
     }
 
     const duplicateEmail = await User.findOne({ email: normalizedEmail });
-    if(duplicateEmail)
-    {
-      return res.status(409).json({message: "email đã tồn tại"})
+    if (duplicateEmail) {
+      return res.status(409).json({ message: "email đã tồn tại" });
     }
 
     // mã hoá password
@@ -82,7 +90,8 @@ export const signIn = async (req, res) => {
   try {
     // lấy inputs
     const { username, password } = req.body;
-    const normalizedIdentifier = typeof username === "string" ? username.trim().toLowerCase() : "";
+    const normalizedIdentifier =
+      typeof username === "string" ? username.trim().toLowerCase() : "";
 
     if (!normalizedIdentifier || !password) {
       return res.status(400).json({ message: "Thiếu username hoặc password." });
@@ -90,7 +99,10 @@ export const signIn = async (req, res) => {
 
     // lấy hashedPassword trong db để so với password input
     const user = await User.findOne({
-      $or: [{ username: normalizedIdentifier }, { email: normalizedIdentifier }],
+      $or: [
+        { username: normalizedIdentifier },
+        { email: normalizedIdentifier },
+      ],
     });
 
     if (!user) {
@@ -118,7 +130,7 @@ export const signIn = async (req, res) => {
       { userId: user._id },
       // @ts-ignore
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: ACCESS_TOKEN_TTL }
+      { expiresIn: ACCESS_TOKEN_TTL },
     );
 
     // tạo refresh token
@@ -203,7 +215,9 @@ export const refreshToken = async (req, res) => {
     const session = await Session.findOne({ refreshToken: token });
 
     if (!session) {
-      return res.status(403).json({ message: "Token không hợp lệ hoặc đã hết hạn" });
+      return res
+        .status(403)
+        .json({ message: "Token không hợp lệ hoặc đã hết hạn" });
     }
 
     // kiểm tra hết hạn chưa
@@ -217,7 +231,7 @@ export const refreshToken = async (req, res) => {
         userId: session.userId,
       },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: ACCESS_TOKEN_TTL }
+      { expiresIn: ACCESS_TOKEN_TTL },
     );
 
     // return
@@ -230,97 +244,85 @@ export const refreshToken = async (req, res) => {
 
 // Đổi mật khẩu
 export const changePassword = async (req, res) => {
-    try {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
 
-        const { currentPassword, newPassword, confirmPassword } = req.body;
-
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            return res.status(400).json({
-                message: "All fields are required",
-            });
-        }
-
-        if (newPassword !== confirmPassword) {
-            return res.status(400).json({
-                message: "Passwords do not match",
-            });
-        }
-
-        const passwordRegex =
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-
-        if (!passwordRegex.test(newPassword)) {
-            return res.status(400).json({
-                message:
-                    "Password must contain uppercase, lowercase and number.",
-            });
-        }
-
-        const user = await User.findById(req.user._id)
-            .select("+hashedPassword");
-
-        if (!user) {
-            return res.status(404).json({
-                message: "User not found",
-            });
-        }
-
-        const matched = await bcrypt.compare(
-            currentPassword,
-            user.hashedPassword
-        );
-
-        if (!matched) {
-            return res.status(401).json({
-                message: "Current password is incorrect",
-            });
-        }
-
-        const samePassword = await bcrypt.compare(
-            newPassword,
-            user.hashedPassword
-        );
-
-        if (samePassword) {
-            return res.status(400).json({
-                message: "New password must be different",
-            });
-        }
-
-        user.hashedPassword = await bcrypt.hash(newPassword, 10);
-
-        await user.save();
-
-        // logout all devices
-        await Session.deleteMany({
-            userId: user._id,
-        });
-
-        res.clearCookie("refreshToken");
-
-        await createAuditLog({
-            actor: user._id,
-            action: "CHANGE_PASSWORD",
-            targetType: "user",
-            targetId: user._id,
-            ipAddress: req.ip,
-        });
-        
-        console.log(req.headers["content-type"]);
-console.log(req.body);
-        return res.status(200).json({
-            message: "Password changed successfully",
-            logout: true,
-        });
-
-    } catch (error) {
-
-        console.error(error);
-
-        return res.status(500).json({
-            message: "Server Error",
-        });
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
     }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "Passwords do not match",
+      });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message: "Password must contain uppercase, lowercase and number.",
+      });
+    }
+
+    const user = await User.findById(req.user._id).select("+hashedPassword");
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const matched = await bcrypt.compare(currentPassword, user.hashedPassword);
+
+    if (!matched) {
+      return res.status(401).json({
+        message: "Current password is incorrect",
+      });
+    }
+
+    const samePassword = await bcrypt.compare(newPassword, user.hashedPassword);
+
+    if (samePassword) {
+      return res.status(400).json({
+        message: "New password must be different",
+      });
+    }
+
+    user.hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await user.save();
+
+    // logout all devices
+    await Session.deleteMany({
+      userId: user._id,
+    });
+
+    res.clearCookie("refreshToken");
+
+    await createAuditLog({
+      actor: user._id,
+      action: "CHANGE_PASSWORD",
+      targetType: "user",
+      targetId: user._id,
+      ipAddress: req.ip,
+    });
+
+    console.log(req.headers["content-type"]);
+    console.log(req.body);
+    return res.status(200).json({
+      message: "Password changed successfully",
+      logout: true,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
 };
 // forget password
 export const forgotPassword = async (req, res) => {
@@ -347,7 +349,10 @@ export const forgotPassword = async (req, res) => {
     });
 
     const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
 
     await PasswordResetToken.create({
       userId: user._id,
@@ -356,7 +361,9 @@ export const forgotPassword = async (req, res) => {
       createdByIp: req.ip,
     });
 
-    const clientUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+    const clientUrl = (
+      process.env.CLIENT_URL || "http://localhost:5173"
+    ).replace(/\/$/, "");
     const link = `${clientUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
     try {
@@ -364,7 +371,8 @@ export const forgotPassword = async (req, res) => {
     } catch (emailError) {
       console.error("Failed to send password reset email:", emailError);
       return res.status(500).json({
-        message: "Unable to send reset instructions right now. Please try again later.",
+        message:
+          "Unable to send reset instructions right now. Please try again later.",
       });
     }
 
@@ -395,7 +403,8 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { token, password, confirmPassword } = req.body;
-    const normalizedToken = typeof token === "string" ? decodeURIComponent(token).trim() : "";
+    const normalizedToken =
+      typeof token === "string" ? decodeURIComponent(token).trim() : "";
 
     if (!normalizedToken || !password || !confirmPassword) {
       return res.status(400).json({
@@ -417,7 +426,10 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    const tokenHash = crypto.createHash("sha256").update(normalizedToken).digest("hex");
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(normalizedToken)
+      .digest("hex");
 
     const resetToken = await PasswordResetToken.findOne({
       tokenHash,
