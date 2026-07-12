@@ -370,9 +370,9 @@ export const forgotPassword = async (req, res) => {
       await sendResetPasswordEmail(user.email, link);
     } catch (emailError) {
       console.error("Failed to send password reset email:", emailError);
-      return res.status(500).json({
+      return res.status(502).json({
         message:
-          "Unable to send reset instructions right now. Please try again later.",
+          "Unable to send reset instructions right now. Please verify the email service configuration and try again later.",
       });
     }
 
