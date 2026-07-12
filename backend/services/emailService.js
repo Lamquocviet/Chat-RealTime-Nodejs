@@ -1,10 +1,17 @@
-import { transporter } from "../config/mailer.js";
+import { transporter, verifyEmailTransport } from "../config/mailer.js";
 
 export const sendResetPasswordEmail = async (email, link) => {
-  console.log("Sending email to:", email);
+  console.log("Sending password reset email to:", email);
   console.log("Reset link:", link);
 
-  const senderEmail = process.env.EMAIL_USER || transporter.options?.auth?.user;
+  const senderEmail =
+    process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.EMAIL_USER || transporter.options?.auth?.user;
+
+  if (!senderEmail) {
+    throw new Error("No sender email configured for password reset.");
+  }
+
+  await verifyEmailTransport();
 
   await transporter.sendMail({
     from: senderEmail,
