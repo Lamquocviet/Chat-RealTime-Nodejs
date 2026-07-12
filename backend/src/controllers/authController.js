@@ -359,7 +359,14 @@ export const forgotPassword = async (req, res) => {
     const clientUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
     const link = `${clientUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
-    await sendResetPasswordEmail(user.email, link);
+    try {
+      await sendResetPasswordEmail(user.email, link);
+    } catch (emailError) {
+      console.error("Failed to send password reset email:", emailError);
+      return res.status(500).json({
+        message: "Unable to send reset instructions right now. Please try again later.",
+      });
+    }
 
     await createAuditLog({
       actor: user._id,
