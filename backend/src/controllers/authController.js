@@ -526,7 +526,9 @@ export const googleLogin = async (req, res) => {
 
     const { accessToken } = await issueTokens(req, res, user);
 
-    const frontendUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+    const frontendUrl = (process.env.CLIENT_URL).replace(/\/$/, "");
+    console.log("CLIENT_URL =", process.env.CLIENT_URL);
+    console.log("Redirecting to:", `${frontendUrl}/google-callback?token=${accessToken}`);
 
     return res.redirect(`${frontendUrl}/google-callback?token=${accessToken}`);
   } catch (error) {

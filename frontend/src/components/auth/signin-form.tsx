@@ -120,7 +120,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full cursor-pointer"
                 onClick={() => void authService.googleLogin()}
               >
                 Tiếp tục với Google
