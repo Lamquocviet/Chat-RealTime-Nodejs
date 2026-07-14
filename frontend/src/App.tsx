@@ -15,6 +15,7 @@ import AuditLogs from "./components/admin/AuditLog";
 import Dashboard from "./components/admin/AdminDashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import GoogleCallbackPage from "./pages/GoogleCallbackPage";
 
 function App() {
   const { isDark, setTheme } = useThemeStore();
@@ -42,6 +43,7 @@ function App() {
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/google-callback" element={<GoogleCallbackPage />} />
 
           {/* protected routes - Chat */}
           <Route element={<ProtectedRoute />}>

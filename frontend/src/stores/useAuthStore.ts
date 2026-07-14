@@ -77,6 +77,25 @@ export const useAuthStore = create<AuthState>()(
           toast.error("Lỗi xảy ra khi logout. Hãy thử lại!");
         }
       },
+      completeGoogleLogin: async (token: string) => {
+        try {
+          get().clearState();
+          set({ loading: true });
+
+          get().setAccessToken(token);
+          await get().fetchMe();
+          useChatStore.getState().fetchConversations();
+
+          toast.success("Đăng nhập Google thành công 🎉");
+          return true;
+        } catch (error) {
+          console.error(error);
+          toast.error("Đăng nhập Google không thành công");
+          return false;
+        } finally {
+          set({ loading: false });
+        }
+      },
       fetchMe: async () => {
         try {
           set({ loading: true });

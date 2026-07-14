@@ -1,19 +1,23 @@
 import express from "express";
 import dotenv from "dotenv";
+
+dotenv.config();
+
 import { connectDB } from "./libs/db.js";
 import authRoute from "./routes/authRoute.js";
 import userRoute from "./routes/userRoute.js";
 import callRoute from "./routes/callRoute.js";
-import adminRoute from "./routes/adminRoute.js"
+import adminRoute from "./routes/adminRoute.js";
 import cookieParser from "cookie-parser";
 import { protectedRoute } from "./middlewares/authMiddleware.js";
 import cors from "cors";
-import conversationRoute from "./routes/conversationRoute.js"
-import friendRoute from "./routes/friendRoute.js"
-import messageRoute from "./routes/messageRoute.js"
-import {app, server} from "./socket/index.js"
-import { v2 as cloudinary } from 'cloudinary';
-dotenv.config();
+import conversationRoute from "./routes/conversationRoute.js";
+import friendRoute from "./routes/friendRoute.js";
+import messageRoute from "./routes/messageRoute.js";
+import { app, server } from "./socket/index.js";
+import { v2 as cloudinary } from "cloudinary";
+import passport from "passport";
+import "../config/passport.js";
 
 
 
@@ -31,6 +35,7 @@ const PORT = process.env.PORT || 5001;
 // middlewares
 app.use(express.json());
 app.use(cookieParser());
+app.use(passport.initialize());
 app.use(
   cors({
     origin: [process.env.CLIENT_URL, "http://localhost:5173", "http://127.0.0.1:5173"],

@@ -11,12 +11,14 @@ const userSchema = new mongoose.Schema(
     },
     hashedPassword: {
       type: String,
-      required: true,
+      // required: true,
+      default: null,
+      
     },
-    role:{
-      type:String,
-      enum:["user", "admin"],
-      default:"user"
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
     },
     email: {
       type: String,
@@ -47,12 +49,23 @@ const userSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["active", "blocked"],
-      default: "active"
-    }
+      default: "active",
+    },
+    provider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
+
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const User = mongoose.model("User", userSchema);

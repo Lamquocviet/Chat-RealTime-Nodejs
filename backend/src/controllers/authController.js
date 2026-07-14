@@ -86,9 +86,39 @@ export const signUp = async (req, res) => {
   }
 };
 
+const issueTokens = async (req, res, user) => {
+  const accessToken = jwt.sign(
+    { userId: user._id },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: ACCESS_TOKEN_TTL },
+  );
+
+  const refreshToken = crypto.randomBytes(64).toString("hex");
+
+  await Session.create({
+    userId: user._id,
+    refreshToken,
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL),
+  });
+
+  res.cookie("refreshToken", refreshToken, getCookieOptions());
+
+  await createAuditLog({
+    actor: user._id,
+    action: "LOGIN",
+    targetType: "user",
+    targetId: user._id,
+    details: {
+      username: user.username,
+    },
+    ipAddress: req.ip,
+  });
+
+  return { accessToken };
+};
+
 export const signIn = async (req, res) => {
   try {
-    // lấy inputs
     const { username, password } = req.body;
     const normalizedIdentifier =
       typeof username === "string" ? username.trim().toLowerCase() : "";
@@ -97,7 +127,6 @@ export const signIn = async (req, res) => {
       return res.status(400).json({ message: "Thiếu username hoặc password." });
     }
 
-    // lấy hashedPassword trong db để so với password input
     const user = await User.findOne({
       $or: [
         { username: normalizedIdentifier },
@@ -110,8 +139,13 @@ export const signIn = async (req, res) => {
         .status(401)
         .json({ message: "username hoặc password không chính xác" });
     }
+    if (user.provider === "google") {
+      return res.status(400).json({
+        message:
+          "Tài khoản này được tạo bằng Google. Vui lòng đăng nhập bằng Google.",
+      });
+    }
 
-    // kiểm tra password
     const passwordCorrect = await bcrypt.compare(password, user.hashedPassword);
 
     if (!passwordCorrect) {
@@ -120,44 +154,12 @@ export const signIn = async (req, res) => {
         .json({ message: "username hoặc password không chính xác" });
     }
 
-    // chặn user đã bị khóa
     if (user.status === "blocked") {
       return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa" });
     }
 
-    // nếu khớp, tạo accessToken với JWT
-    const accessToken = jwt.sign(
-      { userId: user._id },
-      // @ts-ignore
-      process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: ACCESS_TOKEN_TTL },
-    );
+    const { accessToken } = await issueTokens(req, res, user);
 
-    // tạo refresh token
-    const refreshToken = crypto.randomBytes(64).toString("hex");
-
-    // tạo session mới để lưu refresh token
-    await Session.create({
-      userId: user._id,
-      refreshToken,
-      expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL),
-    });
-
-    // trả refresh token về trong cookie
-    res.cookie("refreshToken", refreshToken, getCookieOptions());
-
-    await createAuditLog({
-      actor: user._id,
-      action: "LOGIN",
-      targetType: "user",
-      targetId: user._id,
-      details: {
-        username: user.username,
-      },
-      ipAddress: req.ip,
-    });
-
-    // trả access token về trong res
     return res
       .status(200)
       .json({ message: `User ${user.displayName} đã logged in!`, accessToken });
@@ -506,5 +508,29 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({
       message: "Server Error",
     });
+  }
+};
+
+// Google login
+export const googleLogin = async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ message: "Google authentication failed" });
+    }
+
+    if (user.status === "blocked") {
+      return res.status(403).json({ message: "Tài khoản của bạn đã bị khóa" });
+    }
+
+    const { accessToken } = await issueTokens(req, res, user);
+
+    const frontendUrl = (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, "");
+
+    return res.redirect(`${frontendUrl}/google-callback?token=${accessToken}`);
+  } catch (error) {
+    console.error("Lỗi khi gọi googleLogin", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

@@ -9,6 +9,7 @@ import { Label } from "../ui/label";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useNavigate } from "react-router";
 import { Link } from "react-router";
+import { authService } from "@/services/authService";
 
 const signInSchema = z.object({
   username: z.string().min(3, "Tên đăng nhập phải có ít nhất 3 ký tự"),
@@ -114,6 +115,15 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => void authService.googleLogin()}
+              >
+                Tiếp tục với Google
               </Button>
 
               <div className="text-center text-sm">
