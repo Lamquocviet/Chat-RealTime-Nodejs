@@ -366,6 +366,7 @@ export const forgotPassword = async (req, res) => {
     const clientUrl = (
       process.env.CLIENT_URL || "http://localhost:5173"
     ).replace(/\/$/, "");
+    console.log("CLIENT_URL =", process.env.CLIENT_URL);
     const link = `${clientUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
     try {

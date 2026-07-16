@@ -165,7 +165,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
               {/* nút đăng ký */}
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full cursor-pointer"
                 disabled={isSubmitting}
               >
                 Tạo tài khoản

@@ -29,7 +29,7 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: `${process.env.CLIENT_URL || "http://localhost:5173"}/signin`,
+    failureRedirect: `${process.env.CLIENT_URL}/signin`,
   }),
   googleLogin,
 );

@@ -10,6 +10,9 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useNavigate } from "react-router";
 import { Link } from "react-router";
 import { authService } from "@/services/authService";
+import { FcGoogle } from "react-icons/fc";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
 const signInSchema = z.object({
   username: z.string().min(3, "Tên đăng nhập phải có ít nhất 3 ký tự"),
@@ -18,9 +21,13 @@ const signInSchema = z.object({
 
 type SignInFormValues = z.infer<typeof signInSchema>;
 
-export function SigninForm({ className, ...props }: React.ComponentProps<"div">) {
+export function SigninForm({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
   const { signIn } = useAuthStore();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -38,27 +45,15 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
   };
 
   return (
-    <div
-      className={cn("flex flex-col gap-6", className)}
-      {...props}
-    >
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0 border-border">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <form
-            className="p-6 md:p-8"
-            onSubmit={handleSubmit(onSubmit)}
-          >
+          <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-6">
               {/* header - logo */}
               <div className="flex flex-col items-center text-center gap-2">
-                <a
-                  href="/"
-                  className="mx-auto block w-fit text-center"
-                >
-                  <img
-                    src="/logo.svg"
-                    alt="logo"
-                  />
+                <a href="/" className="mx-auto block w-fit text-center">
+                  <img src="/logo.svg" alt="logo" />
                 </a>
 
                 <h1 className="text-2xl font-bold">Chào mừng quay lại</h1>
@@ -69,10 +64,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
 
               {/* username */}
               <div className="flex flex-col gap-3">
-                <Label
-                  htmlFor="username"
-                  className="block text-sm"
-                >
+                <Label htmlFor="username" className="block text-sm">
                   Tên đăng nhập
                 </Label>
                 <Input
@@ -90,17 +82,30 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
 
               {/* password */}
               <div className="flex flex-col gap-3">
-                <Label
-                  htmlFor="password"
-                  className="block text-sm"
-                >
+                <Label htmlFor="password" className="block text-sm">
                   Mật khẩu
                 </Label>
-                <Input
-                  type="password"
-                  id="password"
-                  {...register("password")}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    {...register("password")}
+                    className="pr-10"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+
                 {errors.password && (
                   <p className="text-destructive text-sm">
                     {errors.password.message}
@@ -111,7 +116,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
               {/* nút đăng nhập */}
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full cursor-pointer"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
@@ -123,6 +128,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
                 className="w-full cursor-pointer"
                 onClick={() => void authService.googleLogin()}
               >
+                <FcGoogle className="mr-2 h-4 w-4" />
                 Tiếp tục với Google
               </Button>
 
@@ -137,10 +143,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
 
               <div className="text-center text-sm">
                 Chưa có tài khoản?{" "}
-                <a
-                  href="/signup"
-                  className="underline underline-offset-4"
-                >
+                <a href="/signup" className="underline underline-offset-4">
                   Đăng ký
                 </a>
               </div>

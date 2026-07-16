@@ -15,19 +15,24 @@ const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
 const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
 const useGmailService = process.env.SMTP_SERVICE === "gmail" || smtpHost.includes("gmail.com");
 
-export const transporter = nodemailer.createTransport({
-  ...(useGmailService ? { service: "gmail" } : { host: smtpHost }),
-  port: smtpPort,
-  secure: smtpSecure,
-  auth: smtpUser && smtpPass ? { user: smtpUser, pass: smtpPass } : undefined,
-  requireTLS: true,
-  connectionTimeout: 20000,
-  greetingTimeout: 20000,
-  socketTimeout: 20000,
-  pool: true,
-  maxConnections: 5,
-});
 
+export const transporter = nodemailer.createTransport({
+  host: smtpHost,
+  port: smtpPort,
+  secure: smtpPort === 465,
+  auth: {
+    user: smtpUser,
+    pass: smtpPass,
+  },
+
+  tls: {
+    rejectUnauthorized: false,
+  },
+
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
+});
 export const verifyEmailTransport = async () => {
   if (!smtpUser || !smtpPass) {
     throw new Error(
