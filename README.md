@@ -21,8 +21,7 @@
 - [Security](#security)
 - [Deployment](#deployment)
 - [Future Improvements](#future-improvements)
-- [License](#license)
-- [Author](#author)
+
 
 ---
 
@@ -389,17 +388,6 @@ npm run dev
 
 ---
 
-## License
-
-MIT
-
----
-
-## Author
-
-- **Name:** Your Name
-- **GitHub:** @your-github
-- **Email:** your-email@example.com
 
 
 
