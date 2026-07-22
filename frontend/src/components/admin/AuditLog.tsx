@@ -261,7 +261,6 @@ const AuditLogs: React.FC = () => {
     auditLogStatsLoading,
     auditLogsTotal,
     auditLogsTotalPages,
-    auditLogsPage,
     auditLogError,
     getAuditLogs,
     getAuditLogStats,
@@ -432,22 +431,7 @@ const AuditLogs: React.FC = () => {
               Monitor administrator activities and important system events.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground tabular-nums">
-              {new Date().toLocaleTimeString("en-US")}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                void getAuditLogStats();
-                void getAuditLogs(currentPage, pageSizeNumber, buildFilters());
-              }}
-              className="w-9 h-9 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Refresh"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
+       
         </div>
 
         {auditLogError ? (
@@ -488,15 +472,7 @@ const AuditLogs: React.FC = () => {
               }}
             />
 
-            <FilterSelect
-              label="Admin"
-              value={adminFilter}
-              options={ADMIN_OPTIONS}
-              onChange={(v) => {
-                setAdminFilter(v);
-                setCurrentPage(1);
-              }}
-            />
+          
 
             <FilterSelect
               label="Status"
@@ -583,7 +559,7 @@ const AuditLogs: React.FC = () => {
                       <td className="px-5 py-3">
                         <TargetCell target={log.target} targetType={log.targetType} />
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground max-w-[220px] truncate">{log.details}</td>
+                      <td className="px-5 py-3 text-muted-foreground max-w-55 truncate">{log.details}</td>
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{log.ipAddress}</td>
                       <td className="px-5 py-3">
                         <StatusPill status={log.status} />

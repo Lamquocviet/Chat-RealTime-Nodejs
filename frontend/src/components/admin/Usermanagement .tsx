@@ -340,19 +340,7 @@ const UserManagement: React.FC = () => {
               actions on users.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground tabular-nums">
-              14:51:22
-            </span>
-            <button
-              type="button"
-              onClick={handleRefresh}
-              className="w-9 h-9 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Refresh"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
+          
         </div>
 
         {/* Filters bar */}

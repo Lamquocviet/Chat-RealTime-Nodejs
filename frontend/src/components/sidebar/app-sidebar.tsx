@@ -78,7 +78,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         className={`h-11 rounded-xl transition-all duration-300
                         ${
                           isActive
-                            ? "font-semibold bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 border border-violet-200"
+                            ? "font-semibold bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 border border-violet-200 hover:text-violet-700"
                             : "hover:bg-violet-50 hover:text-violet-600"
                         }
                       `}
@@ -98,7 +98,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         className={`h-11 rounded-xl transition-all duration-300
                         ${
                           isActive
-                            ? "font-semibold bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 border border-violet-200"
+                            ? "font-semibold bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 border border-violet-200 hover:text-violet-700"
                             : "hover:bg-violet-50 hover:text-violet-600"
                         }
                       `}
@@ -118,7 +118,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         className={`h-11 rounded-xl transition-all duration-300
                         ${
                           isActive
-                            ? "font-semibold bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 border border-violet-200"
+                            ? "font-semibold bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 border border-violet-200 hover:text-violet-700"
                             : "hover:bg-violet-50 hover:text-violet-600"
                         }
                       `}
