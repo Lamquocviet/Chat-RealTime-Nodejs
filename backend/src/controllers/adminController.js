@@ -68,6 +68,7 @@ export const deleteUser = async (req, res) => {
 
     await createAuditLog({
       actor: req.user._id,
+      module: "ADMIN",
       action: "DELETE_USER",
       targetType: "user",
       targetId: deleteUser._id,
@@ -76,6 +77,7 @@ export const deleteUser = async (req, res) => {
         email: deleteUser.email,
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.status(200).json({
@@ -113,6 +115,7 @@ export const promoteToAdmin = async (req, res) => {
 
     await createAuditLog({
       actor: req.user._id,
+      module: "ADMIN",
       action: "CHANGE_ROLE",
       targetType: "user",
       targetId: user._id,
@@ -121,6 +124,7 @@ export const promoteToAdmin = async (req, res) => {
         to: user.role,
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.status(200).json({
@@ -168,6 +172,7 @@ export const demoteToAdmin = async (req, res) => {
 
     await createAuditLog({
       actor: req.user._id,
+      module: "ADMIN",
       action: "CHANGE_ROLE",
       targetType: "user",
       targetId: user._id,
@@ -176,6 +181,7 @@ export const demoteToAdmin = async (req, res) => {
         to: user.role,
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.status(200).json({
@@ -215,6 +221,7 @@ export const blockUser = async (req, res) => {
 
     await createAuditLog({
       actor: req.user._id,
+      module: "ADMIN",
       action: "BLOCK_USER",
       targetType: "user",
       targetId: user._id,
@@ -223,6 +230,7 @@ export const blockUser = async (req, res) => {
         status: user.status,
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.status(200).json({
@@ -257,6 +265,7 @@ export const activeUser = async (req, res) => {
 
     await createAuditLog({
       actor: req.user._id,
+      module: "ADMIN",
       action: "UNBLOCK_USER",
       targetType: "user",
       targetId: user._id,
@@ -265,6 +274,7 @@ export const activeUser = async (req, res) => {
         status: user.status,
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.status(200).json({
@@ -420,97 +430,88 @@ export const getUserStats = async (req, res) => {
 };
 
 // Audit-log
-export const getAuditLogs = async(req, res) => {
-
+export const getAuditLogs = async (req, res) => {
   try {
-
-
-    const page =
-      Number(req.query.page) || 1;
-
-
-    const limit =
-      Number(req.query.limit) || 20;
-
-
-
-    const skip =
-      (page - 1) * limit;
-
-
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+    const skip = (page - 1) * limit;
 
     const {
+      module,
       action,
+      status,
+      severity,
+      actor,
+      actorRole,
       targetType,
-      actor
+      startDate,
+      endDate,
+      search,
     } = req.query;
-
-
 
     const filter = {};
 
+    if (module) filter.module = module;
 
+    if (action) filter.action = action;
 
-    if(action){
+    if (status) filter.status = status;
 
-      filter.action = action;
+    if (severity) filter.severity = severity;
 
+    if (actor) filter.actor = actor;
+
+    if (actorRole) filter.actorRole = actorRole;
+
+    if (targetType) filter.targetType = targetType;
+
+    // Filter theo ngày
+    if (startDate || endDate) {
+      filter.createdAt = {};
+
+      if (startDate)
+        filter.createdAt.$gte = new Date(startDate);
+
+      if (endDate)
+        filter.createdAt.$lte = new Date(endDate);
     }
 
-
-
-    if(targetType){
-
-      filter.targetType = targetType;
-
+    // Search tên người dùng hoặc tên đối tượng
+    if (search) {
+      filter.$or = [
+        {
+          actorName: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          targetName: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
     }
-
-
-
-    if(actor){
-
-      filter.actor = actor;
-
-    }
-
-
-
 
     const [logs, total] = await Promise.all([
-
-
       AuditLog.find(filter)
-
         .populate(
           "actor",
-          "displayName username avatarUrl"
+          "displayName username avatarUrl role"
         )
-
         .sort({
-          createdAt:-1
+          createdAt: -1,
         })
-
         .skip(skip)
-
         .limit(limit)
-
         .lean(),
 
-
-
-      AuditLog.countDocuments(filter)
-
-
-
+      AuditLog.countDocuments(filter),
     ]);
 
-
-
-
-
     return res.status(200).json({
-
-      success:true,
+      success: true,
 
       page,
 
@@ -518,34 +519,76 @@ export const getAuditLogs = async(req, res) => {
 
       total,
 
-      totalPages:
-      Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit),
 
-
-      logs
-
+      logs,
     });
-
-
-
-  } catch(error){
-
-
-    console.error(
-      "Get audit-log error:",
-      error
-    );
-
+  } catch (error) {
+    console.error("Get audit logs:", error);
 
     return res.status(500).json({
-
-      success:false,
-
-      message:"Server error"
-
+      success: false,
+      message: "Server Error",
     });
-
-
   }
+};
+// audit-logs/stats
+export const getAuditLogStats = async (req, res) => {
+  try {
+    const startToday = new Date();
+    startToday.setHours(0, 0, 0, 0);
 
+    const [
+      totalLogs,
+      logsToday,
+      failedActions,
+      userActions,
+      adminActions,
+      authenticationActions,
+    ] = await Promise.all([
+      AuditLog.countDocuments(),
+
+      AuditLog.countDocuments({
+        createdAt: {
+          $gte: startToday,
+        },
+      }),
+
+      AuditLog.countDocuments({
+        status: "FAILED",
+      }),
+
+      AuditLog.countDocuments({
+        module: "USER",
+      }),
+
+      AuditLog.countDocuments({
+        module: "ADMIN",
+      }),
+
+      AuditLog.countDocuments({
+        module: "AUTH",
+      }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+
+      stats: {
+        totalLogs,
+        logsToday,
+        failedActions,
+        userActions,
+        adminActions,
+        authenticationActions,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
 };

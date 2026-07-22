@@ -68,6 +68,7 @@ export const signUp = async (req, res) => {
 
     await createAuditLog({
       actor: newUser._id,
+      module: "AUTH",
       action: "CREATE_USER",
       targetType: "user",
       targetId: newUser._id,
@@ -76,6 +77,7 @@ export const signUp = async (req, res) => {
         email: newUser.email,
       },
       ipAddress: req.ip,
+      req,
     });
 
     // return
@@ -105,6 +107,7 @@ const issueTokens = async (req, res, user) => {
 
   await createAuditLog({
     actor: user._id,
+    module: "AUTH",
     action: "LOGIN",
     targetType: "user",
     targetId: user._id,
@@ -112,6 +115,7 @@ const issueTokens = async (req, res, user) => {
       username: user.username,
     },
     ipAddress: req.ip,
+    req,
   });
 
   return { accessToken };
@@ -188,6 +192,7 @@ export const signOut = async (req, res) => {
 
     await createAuditLog({
       actor: req.user._id,
+      module: "AUTH",
       action: "LOGOUT",
       targetType: "user",
       targetId: req.user._id,
@@ -195,6 +200,7 @@ export const signOut = async (req, res) => {
         username: req.user.username,
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.sendStatus(204);
@@ -306,10 +312,12 @@ export const changePassword = async (req, res) => {
 
     await createAuditLog({
       actor: user._id,
+      module: "AUTH",
       action: "CHANGE_PASSWORD",
       targetType: "user",
       targetId: user._id,
       ipAddress: req.ip,
+      req,
     });
 
     console.log(req.headers["content-type"]);
@@ -381,6 +389,7 @@ export const forgotPassword = async (req, res) => {
 
     await createAuditLog({
       actor: user._id,
+      module: "AUTH",
       action: "FORGOT_PASSWORD_REQUEST",
       targetType: "user",
       targetId: user._id,
@@ -388,6 +397,7 @@ export const forgotPassword = async (req, res) => {
         email: user.email,
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.status(200).json({
@@ -491,6 +501,7 @@ export const resetPassword = async (req, res) => {
 
     await createAuditLog({
       actor: user._id,
+      module: "AUTH",
       action: "RESET_PASSWORD",
       targetType: "user",
       targetId: user._id,
@@ -498,6 +509,7 @@ export const resetPassword = async (req, res) => {
         email: user.email,
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.status(200).json({

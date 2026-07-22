@@ -9,14 +9,12 @@ export const socketAuthMiddleware = async (socket, next) => {
     }
     
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    if(!decoded)
-    {
-      return next (new Error("Unauthorized - Token không hợp lệ hoặc đã hết hạn"));
-      
+    if (!decoded) {
+      return next(new Error("Unauthorized - Token không hợp lệ hoặc đã hết hạn"));
     }
+
     const user = await User.findById(decoded.userId).select("-hashedPassword");
-    if(!user)
-    {
+    if (!user) {
       return next(new Error("User không tồn tại"));
     }
 

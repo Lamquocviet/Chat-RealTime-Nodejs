@@ -18,6 +18,9 @@ import { app, server } from "./socket/index.js";
 import { v2 as cloudinary } from "cloudinary";
 import passport from "passport";
 import "../config/passport.js";
+import dns from "dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 
 

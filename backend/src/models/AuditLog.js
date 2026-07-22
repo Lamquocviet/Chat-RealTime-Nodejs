@@ -1,146 +1,186 @@
 import mongoose from "mongoose";
 
-
 const auditLogSchema = new mongoose.Schema(
   {
-
-    // Ai thực hiện hành động
-    actor:{
-      type:mongoose.Schema.Types.ObjectId,
-      ref:"User",
-      required:true
+    // ============================
+    // Người thực hiện
+    // ============================
+    actor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
     },
 
+    actorName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-    // Hành động gì
-    action:{
-      type:String,
-      enum:[
+    actorRole: {
+      type: String,
+      enum: ["user", "admin"],
+      required: true,
+      index: true,
+    },
 
-        "CREATE_USER",
+    // ============================
+    // Module
+    // ============================
+    module: {
+      type: String,
+      enum: [
+        "AUTH",
+        "USER",
+        "ADMIN",
+        "REPORT",
+        "SYSTEM",
+      ],
+      required: true,
+      index: true,
+    },
 
-        "UPDATE_USER",
-
-        "DELETE_USER",
-
-        "BLOCK_USER",
-
-        "UNBLOCK_USER",
-
-        "CHANGE_ROLE",
-
+    // ============================
+    // Action
+    // ============================
+    action: {
+      type: String,
+      required: true,
+      enum: [
+        // Authentication
+        "REGISTER",
+        "LOGIN",
+        "LOGOUT",
+        "VERIFY_EMAIL",
+        "FORGOT_PASSWORD_REQUEST",
+        "RESET_PASSWORD",
         "CHANGE_PASSWORD",
 
-        "CREATE_GROUP",
+        // User
+        "UPDATE_PROFILE",
+        "DELETE_ACCOUNT",
 
-        "UPDATE_GROUP",
+        // Admin
+        "CREATE_USER",
+        "UPDATE_USER",
+        "DELETE_USER",
+        "BLOCK_USER",
+        "UNBLOCK_USER",
+        "CHANGE_ROLE",
 
+        "DELETE_POST",
+        "DELETE_STORY",
+        "DELETE_COMMENT",
         "DELETE_GROUP",
 
-        "DELETE_MESSAGE",
+        // Report
+        "CREATE_REPORT",
+        "RESOLVE_REPORT",
 
-        "LOGIN",
-
-        "LOGOUT",
-
-        "FORGOT_PASSWORD_REQUEST",
-
-        "RESET_PASSWORD"
-
+        // System
+        "EXPORT_USERS",
+        "EXPORT_AUDIT_LOG",
+        "VIEW_DASHBOARD",
       ],
-      required:true
+      index: true,
     },
 
-
+    // ============================
     // Đối tượng bị tác động
-
-    targetType:{
-      type:String,
-
-      enum:[
-
+    // ============================
+    targetType: {
+      type: String,
+      enum: [
         "user",
-
+        "post",
+        "story",
+        "comment",
         "group",
-
-        "message",
-
-        "system"
-
+        "report",
+        "system",
       ],
-
-      required:true
+      required: true,
+      index: true,
     },
 
-
-
-    // id của đối tượng
-
-    targetId:{
-
-      type:mongoose.Schema.Types.ObjectId
-
+    targetId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+      index: true,
     },
 
-
-
-    // dữ liệu thêm
-
-    details:{
-
-      type:Object,
-
-      default:{}
-
+    targetName: {
+      type: String,
+      default: "",
     },
 
+    // ============================
+    // Request
+    // ============================
+    requestMethod: {
+      type: String,
+      enum: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    },
 
+    requestPath: String,
 
-    // ip người thực hiện
+    // ============================
+    // Kết quả
+    // ============================
+    status: {
+      type: String,
+      enum: ["SUCCESS", "FAILED"],
+      default: "SUCCESS",
+      index: true,
+    },
 
-    ipAddress:{
+    severity: {
+      type: String,
+      enum: [
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "CRITICAL",
+      ],
+      default: "INFO",
+      index: true,
+    },
 
-      type:String
+    description: String,
 
-    }
+    errorMessage: String,
 
+    details: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
 
+    // ============================
+    // Client
+    // ============================
+    ipAddress: String,
+
+    userAgent: String,
+
+    browser: String,
+
+    operatingSystem: String,
+
+    device: String,
+
+    sessionId: String,
+
+    duration: Number,
   },
-
-
   {
-    timestamps:true
+    timestamps: true,
   }
-
 );
+auditLogSchema.index({ createdAt: -1 });
+auditLogSchema.index({ module: 1, createdAt: -1 });
+auditLogSchema.index({ action: 1, status: 1, createdAt: -1 });
 
-
-
-// index để query nhanh
-
-auditLogSchema.index({
-  createdAt:-1
-});
-
-
-auditLogSchema.index({
-  actor:1
-});
-
-
-auditLogSchema.index({
-  targetType:1,
-  targetId:1
-});
-
-
-
-const AuditLog =
-mongoose.model(
-  "AuditLog",
-  auditLogSchema
-);
-
-
+const AuditLog = mongoose.model("AuditLog", auditLogSchema);
 
 export default AuditLog;

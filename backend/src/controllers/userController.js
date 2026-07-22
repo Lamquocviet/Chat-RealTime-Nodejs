@@ -77,13 +77,15 @@ export const updateProfile = async (req, res) => {
 
     await createAuditLog({
       actor: userId,
-      action: "UPDATE_USER",
+      module: "USER",
+      action: "UPDATE_PROFILE",
       targetType: "user",
       targetId: userId,
       details: {
         changedFields: Object.keys(updateData),
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.status(200).json({
@@ -141,13 +143,15 @@ export const uploadAvatar = async (req, res) => {
 
     await createAuditLog({
       actor: userId,
-      action: "UPDATE_USER",
+      module: "USER",
+      action: "UPDATE_PROFILE",
       targetType: "user",
       targetId: userId,
       details: {
         changedFields: ["avatarUrl"],
       },
       ipAddress: req.ip,
+      req,
     });
 
     return res.status(200).json({ avatarUrl: updatedUser.avatarUrl });
