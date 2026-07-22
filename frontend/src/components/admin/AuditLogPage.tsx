@@ -1,23 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import {
-  FileText,
-  CalendarCheck,
-  ShieldAlert,
-  User,
-  MessageSquare,
-  Video,
-  Search,
-  ChevronDown,
-  Calendar,
-  Download,
-  ChevronLeft,
-  ChevronRight,
-  ArrowUpDown,
-  Eye,
-  CheckCircle2,
-  XCircle,
-  Bot,
-} from "lucide-react";
+import { FileText, CalendarCheck, ShieldAlert, User, MessageSquare, Video, Search, ChevronDown, Calendar, Download, ChevronLeft, ChevronRight, ArrowUpDown, Eye, CheckCircle2, XCircle, Bot } from "lucide-react";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { AuditLogFilters, AuditLogItem } from "@/types/admin";
 import * as XLSX from "xlsx";
@@ -66,9 +48,40 @@ const ACTION_STYLES: Record<string, string> = {
   DEFAULT: "bg-slate-50 text-slate-500",
 };
 
-const ACTION_OPTIONS = ["All Actions", "BLOCK_USER", "DELETE_USER", "LOGIN", "CHANGE_ROLE", "UNBLOCK_USER"];
-// Admin filter options (not currently rendered)
-// const ADMIN_OPTIONS = ["All Admins", "Admin", "User", "System"];
+const ACTION_OPTIONS = [
+  "All Actions",
+
+  // Authentication
+  "REGISTER",
+  "LOGIN",
+  "LOGOUT",
+  "VERIFY_EMAIL",
+  "FORGOT_PASSWORD_REQUEST",
+  "RESET_PASSWORD",
+  "CHANGE_PASSWORD",
+
+  // User
+  "UPDATE_PROFILE",
+  "DELETE_ACCOUNT",
+
+  // Admin
+  "CREATE_USER",
+  "UPDATE_USER",
+  "DELETE_USER",
+  "BLOCK_USER",
+  "UNBLOCK_USER",
+  "CHANGE_ROLE",
+
+
+  // Report
+  "CREATE_REPORT",
+  "RESOLVE_REPORT",
+
+  // System
+  "EXPORT_USERS",
+  "EXPORT_AUDIT_LOG",
+  "VIEW_DASHBOARD",
+];
 const STATUS_OPTIONS = ["All Status", "Success", "Failed"];
 const DATE_OPTIONS = ["All Time", "Today", "This Week", "This Month"];
 
@@ -231,6 +244,56 @@ const FilterSelect: React.FC<{
   </div>
 );
 
+// Custom Action dropdown that opens below the trigger
+const ActionDropdown: React.FC<{
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}> = ({ value, options, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  return (
+    <div className="relative w-40" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        className="w-full text-left pl-3 pr-8 py-2.5 rounded-xl border border-border bg-background text-sm flex items-center gap-2"
+      >
+        <span className="flex-1 truncate">{value}</span>
+        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 mt-2 w-full bg-card border border-border rounded-md shadow z-50 max-h-60 overflow-x-hidden overflow-y-auto beautiful-scrollbar">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => {
+                onChange(opt);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-muted ${opt === value ? "font-semibold" : ""}`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PageArrow: React.FC<{ icon: React.ReactNode; disabled: boolean; onClick: () => void }> = ({
   icon,
   disabled,
@@ -246,7 +309,7 @@ const PageArrow: React.FC<{ icon: React.ReactNode; disabled: boolean; onClick: (
   </button>
 );
 
-const AuditLogs: React.FC = () => {
+const AuditLogsPage: React.FC = () => {
   const [search, setSearch] = useState<string>("");
   const [actionFilter, setActionFilter] = useState<string>("All Actions");
   const [adminFilter, setAdminFilter] = useState<string>("All Admins");
@@ -494,15 +557,17 @@ const AuditLogs: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <FilterSelect
-              label="Action"
-              value={actionFilter}
-              options={ACTION_OPTIONS}
-              onChange={(v) => {
-                setActionFilter(v);
-                setCurrentPage(1);
-              }}
-            />
+            <div>
+              <label className="absolute -top-2 left-2.5 bg-background px-1 text-[10px] text-muted-foreground">Action</label>
+              <ActionDropdown
+                value={actionFilter}
+                options={ACTION_OPTIONS}
+                onChange={(v) => {
+                  setActionFilter(v);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
 
           
 
@@ -551,7 +616,7 @@ const AuditLogs: React.FC = () => {
         </div>
 
         <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="beautiful-scroll-vertical">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wide">
@@ -675,4 +740,4 @@ const AuditLogs: React.FC = () => {
   );
 };
 
-export default AuditLogs;
+export default AuditLogsPage;

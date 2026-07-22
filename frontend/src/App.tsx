@@ -11,11 +11,11 @@ import { useAuthStore } from "./stores/useAuthStore";
 import { useSocketStore } from "./stores/useSocketStore";
 import UserManagement from "./components/admin/Usermanagement ";
 import AdminLayout from "./pages/AdminLayout";
-import AuditLogs from "./components/admin/AuditLog";
 import Dashboard from "./components/admin/AdminDashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
+import AuditLogsPage from "./components/admin/AuditLogPage";
 
 function App() {
   const { isDark, setTheme } = useThemeStore();
@@ -58,7 +58,7 @@ function App() {
                 path="/admin/user-management"
                 element={<UserManagement />}
               />
-              <Route path="/admin/audit-logs" element={<AuditLogs/>} />
+              <Route path="/admin/audit-logs" element={<AuditLogsPage/>} />
             </Route>
           </Route>
         </Routes>
