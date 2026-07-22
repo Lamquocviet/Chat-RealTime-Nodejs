@@ -10,7 +10,6 @@ import {
   ChevronDown,
   Calendar,
   Download,
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
@@ -21,6 +20,8 @@ import {
 } from "lucide-react";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { AuditLogFilters, AuditLogItem } from "@/types/admin";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 type ActionType = string;
 type LogStatus = "Success" | "Failed" | string;
@@ -66,7 +67,8 @@ const ACTION_STYLES: Record<string, string> = {
 };
 
 const ACTION_OPTIONS = ["All Actions", "BLOCK_USER", "DELETE_USER", "LOGIN", "CHANGE_ROLE", "UNBLOCK_USER"];
-const ADMIN_OPTIONS = ["All Admins", "Admin", "User", "System"];
+// Admin filter options (not currently rendered)
+// const ADMIN_OPTIONS = ["All Admins", "Admin", "User", "System"];
 const STATUS_OPTIONS = ["All Status", "Success", "Failed"];
 const DATE_OPTIONS = ["All Time", "Today", "This Week", "This Month"];
 
@@ -421,6 +423,36 @@ const AuditLogs: React.FC = () => {
     ];
   }, [auditLogStats, auditLogStatsLoading]);
 
+  const handleExport = () => {
+    try {
+      const rows = filteredLogs.map((l) => ({
+        Time: l.time,
+        Admin: l.admin.name,
+        Username: l.admin.subtitle,
+        Action: l.action,
+        Target: l.target,
+        TargetType: l.targetType,
+        Details: l.details,
+        IP: l.ipAddress,
+        Status: l.status,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "AuditLogs");
+
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], { type: "application/octet-stream" });
+      const filename = `audit-logs-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.xlsx`;
+      saveAs(blob, filename);
+    } catch (err) {
+      // fallback: notify user in console
+      // UI already has toast in store; keeping simple here
+      // eslint-disable-next-line no-console
+      console.error("Export failed", err);
+    }
+  };
+
   return (
     <div className="min-h-screen p-0">
       <div className="max-w-350 mx-auto flex flex-col gap-6">
@@ -507,7 +539,9 @@ const AuditLogs: React.FC = () => {
 
               <button
                 type="button"
-                className="px-4 py-2.5 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+                onClick={handleExport}
+                disabled={filteredLogs.length === 0}
+                className="px-4 py-2.5 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download className="w-4 h-4" />
                 Export
