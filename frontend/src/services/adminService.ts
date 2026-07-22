@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import type { UserResponse, AdminActionResponse } from "@/types/admin";
+import type { AdminActionResponse, AuditLogFilters, AuditLogListResponse, AuditLogStatsResponse, UserResponse } from "@/types/admin";
 
 export const adminService = {
   async getAllUser(page = 1, limit = 10): Promise<UserResponse> {
@@ -19,7 +19,6 @@ export const adminService = {
     const res = await api.patch(`/admin/${userId}/promote`);
     return res.data;
   },
-
 
   // Demote -> User
   async demoteUser(userId: string): Promise<AdminActionResponse> {
@@ -41,6 +40,24 @@ export const adminService = {
 
   async getUserStats() {
     const res = await api.get("/admin/stats/users");
+    return res.data;
+  },
+
+  async getAuditLogs(page = 1, limit = 20, filters: AuditLogFilters = {}): Promise<AuditLogListResponse> {
+    const params: Record<string, string | number> = { page, limit };
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value && value !== "All Actions" && value !== "All Status" && value !== "All Admins") {
+        params[key] = value;
+      }
+    });
+
+    const res = await api.get("/admin/audit-log", { params });
+    return res.data;
+  },
+
+  async getAuditLogStats(): Promise<AuditLogStatsResponse> {
+    const res = await api.get("/admin/stats-log");
     return res.data;
   },
 };

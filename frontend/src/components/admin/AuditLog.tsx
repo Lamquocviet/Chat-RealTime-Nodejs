@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import {
   FileText,
   CalendarCheck,
@@ -19,24 +19,12 @@ import {
   XCircle,
   Bot,
 } from "lucide-react";
+import { useAdminStore } from "@/stores/useAdminStore";
+import type { AuditLogFilters, AuditLogItem } from "@/types/admin";
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
-type ActionType =
-  | "BLOCK_USER"
-  | "DELETE_USER"
-  | "LOGIN"
-  | "CREATE_GROUP"
-  | "DELETE_MESSAGE"
-  | "PROMOTE_ADMIN"
-  | "VIDEO_CALL_ENDED"
-  | "VIDEO_CALL_STARTED";
-
-type LogStatus = "Success" | "Failed";
-
-type TargetType = "User" | "Group" | "Message" | "Video Call" | "System" | "";
+type ActionType = string;
+type LogStatus = "Success" | "Failed" | string;
+type TargetType = string;
 
 interface AdminInfo {
   name: string;
@@ -45,7 +33,7 @@ interface AdminInfo {
   isSystem?: boolean;
 }
 
-interface AuditLog {
+interface AuditLogViewModel {
   id: string;
   time: string;
   admin: AdminInfo;
@@ -66,123 +54,21 @@ interface MetricCardProps {
   trendDirection: "up" | "down";
 }
 
-/* ------------------------------------------------------------------ */
-/*  Static data                                                        */
-/* ------------------------------------------------------------------ */
-
-const ACTION_STYLES: Record<ActionType, string> = {
+const ACTION_STYLES: Record<string, string> = {
   BLOCK_USER: "bg-red-50 text-red-500",
   DELETE_USER: "bg-orange-50 text-orange-500",
   LOGIN: "bg-emerald-50 text-emerald-500",
-  CREATE_GROUP: "bg-blue-50 text-blue-500",
-  DELETE_MESSAGE: "bg-pink-50 text-pink-500",
-  PROMOTE_ADMIN: "bg-amber-50 text-amber-500",
-  VIDEO_CALL_ENDED: "bg-purple-50 text-purple-500",
-  VIDEO_CALL_STARTED: "bg-indigo-50 text-indigo-500",
+  CHANGE_ROLE: "bg-amber-50 text-amber-500",
+  UNBLOCK_USER: "bg-sky-50 text-sky-500",
+  CREATE_USER: "bg-blue-50 text-blue-500",
+  UPDATE_PROFILE: "bg-indigo-50 text-indigo-500",
+  DEFAULT: "bg-slate-50 text-slate-500",
 };
 
-const LOGS: AuditLog[] = [
-  {
-    id: "1",
-    time: "Jul 06, 2025 14:21:55",
-    admin: { name: "Viet Lam Quoc", subtitle: "@vietlam", avatarColor: "bg-purple-200 text-purple-700" },
-    action: "BLOCK_USER",
-    target: "nguyenvana",
-    targetType: "User",
-    details: "Reason: Spam nhieu lan",
-    ipAddress: "113.160.xxx.xxx",
-    status: "Success",
-  },
-  {
-    id: "2",
-    time: "Jul 06, 2025 14:10:32",
-    admin: { name: "Super Admin", subtitle: "@superadmin", avatarColor: "bg-indigo-200 text-indigo-700" },
-    action: "DELETE_USER",
-    target: "lequoc",
-    targetType: "User",
-    details: "Violated community policy",
-    ipAddress: "103.77.xxx.xxx",
-    status: "Success",
-  },
-  {
-    id: "3",
-    time: "Jul 06, 2025 13:54:21",
-    admin: { name: "Admin Minh", subtitle: "@adminminh", avatarColor: "bg-slate-200 text-slate-700" },
-    action: "LOGIN",
-    target: "",
-    targetType: "System",
-    details: "Admin logged in",
-    ipAddress: "113.162.xxx.xxx",
-    status: "Success",
-  },
-  {
-    id: "4",
-    time: "Jul 06, 2025 13:42:18",
-    admin: { name: "Admin Linh", subtitle: "@adminlinh", avatarColor: "bg-rose-200 text-rose-700" },
-    action: "CREATE_GROUP",
-    target: "CNTT K20",
-    targetType: "Group",
-    details: "Created new group",
-    ipAddress: "113.161.xxx.xxx",
-    status: "Success",
-  },
-  {
-    id: "5",
-    time: "Jul 06, 2025 13:20:45",
-    admin: { name: "Viet Lam Quoc", subtitle: "@vietlam", avatarColor: "bg-purple-200 text-purple-700" },
-    action: "DELETE_MESSAGE",
-    target: "Message #2939",
-    targetType: "Message",
-    details: "Offensive content",
-    ipAddress: "113.160.xxx.xxx",
-    status: "Success",
-  },
-  {
-    id: "6",
-    time: "Jul 06, 2025 12:58:03",
-    admin: { name: "Admin Huy", subtitle: "@adminhuy", avatarColor: "bg-cyan-200 text-cyan-700" },
-    action: "PROMOTE_ADMIN",
-    target: "phamanh",
-    targetType: "User",
-    details: "Promoted to Admin",
-    ipAddress: "113.163.xxx.xxx",
-    status: "Success",
-  },
-  {
-    id: "7",
-    time: "Jul 06, 2025 12:40:11",
-    admin: { name: "System", subtitle: "@system", avatarColor: "bg-slate-200 text-slate-500", isSystem: true },
-    action: "VIDEO_CALL_ENDED",
-    target: "Room #5482",
-    targetType: "Video Call",
-    details: "Duration: 18m 24s",
-    ipAddress: "-",
-    status: "Success",
-  },
-  {
-    id: "8",
-    time: "Jul 06, 2025 12:25:37",
-    admin: { name: "Admin Minh", subtitle: "@adminminh", avatarColor: "bg-slate-200 text-slate-700" },
-    action: "VIDEO_CALL_STARTED",
-    target: "Room #5482",
-    targetType: "Video Call",
-    details: "Call initiated",
-    ipAddress: "113.162.xxx.xxx",
-    status: "Success",
-  },
-];
-
-const TOTAL_LOGS = 2354;
-const TOTAL_PAGES = 118;
-
-const ACTION_OPTIONS = ["All Actions", "BLOCK_USER", "DELETE_USER", "LOGIN", "CREATE_GROUP", "DELETE_MESSAGE", "PROMOTE_ADMIN"];
-const ADMIN_OPTIONS = ["All Admins", "Viet Lam Quoc", "Super Admin", "Admin Minh", "Admin Linh", "Admin Huy"];
+const ACTION_OPTIONS = ["All Actions", "BLOCK_USER", "DELETE_USER", "LOGIN", "CHANGE_ROLE", "UNBLOCK_USER"];
+const ADMIN_OPTIONS = ["All Admins", "Admin", "User", "System"];
 const STATUS_OPTIONS = ["All Status", "Success", "Failed"];
-const DATE_OPTIONS = ["This Week", "Today", "This Month", "All Time"];
-
-/* ------------------------------------------------------------------ */
-/*  Presentational helpers                                             */
-/* ------------------------------------------------------------------ */
+const DATE_OPTIONS = ["All Time", "Today", "This Week", "This Month"];
 
 function initials(name: string): string {
   return name
@@ -191,6 +77,62 @@ function initials(name: string): string {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+}
+
+function formatDateTime(value?: string): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function normalizeStatus(status?: string): LogStatus {
+  if (status === "FAILED") return "Failed";
+  if (status === "SUCCESS") return "Success";
+  return status ?? "Success";
+}
+
+function buildDetails(details?: AuditLogItem["details"], description?: string): string {
+  if (description) return description;
+  if (typeof details === "string") return details;
+  if (details && typeof details === "object") {
+    return Object.entries(details)
+      .slice(0, 3)
+      .map(([key, value]) => `${key}: ${String(value)}`)
+      .join(" • ");
+  }
+  return "No additional details";
+}
+
+function mapLogToViewModel(log: AuditLogItem): AuditLogViewModel {
+  const actorName = log.actor?.displayName || log.actorName || "System";
+  const actorSubtitle = log.actor?.username ? `@${log.actor.username}` : log.actorRole === "admin" ? "@admin" : "@user";
+  const targetName = log.targetName || "—";
+  const targetType = log.targetType ? log.targetType.charAt(0).toUpperCase() + log.targetType.slice(1) : "System";
+
+  return {
+    id: log._id || log.id || `${log.createdAt || Date.now()}`,
+    time: formatDateTime(log.createdAt),
+    admin: {
+      name: actorName,
+      subtitle: actorSubtitle,
+      avatarColor: log.actorRole === "admin" ? "bg-purple-200 text-purple-700" : "bg-slate-200 text-slate-700",
+      isSystem: actorName === "System",
+    },
+    action: log.action || "UNKNOWN",
+    target: targetName,
+    targetType,
+    details: buildDetails(log.details, log.description),
+    ipAddress: log.ipAddress || "—",
+    status: normalizeStatus(log.status),
+  };
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ icon, iconBg, label, value, trend, trendDirection }) => (
@@ -213,7 +155,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon, iconBg, label, value, tre
 
 const ActionBadge: React.FC<{ action: ActionType }> = ({ action }) => (
   <span
-    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold ${ACTION_STYLES[action]}`}
+    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold ${ACTION_STYLES[action] ?? ACTION_STYLES.DEFAULT}`}
   >
     {action}
   </span>
@@ -245,7 +187,7 @@ const AdminCell: React.FC<{ admin: AdminInfo }> = ({ admin }) => (
 );
 
 const TargetCell: React.FC<{ target: string; targetType: TargetType }> = ({ target, targetType }) => {
-  if (!target) return <span className="text-muted-foreground">—</span>;
+  if (!target || target === "—") return <span className="text-muted-foreground">—</span>;
   return (
     <div className="flex items-center gap-1.5">
       <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -302,109 +244,187 @@ const PageArrow: React.FC<{ icon: React.ReactNode; disabled: boolean; onClick: (
   </button>
 );
 
-/* ------------------------------------------------------------------ */
-/*  Main component                                                      */
-/* ------------------------------------------------------------------ */
-
 const AuditLogs: React.FC = () => {
   const [search, setSearch] = useState<string>("");
   const [actionFilter, setActionFilter] = useState<string>("All Actions");
   const [adminFilter, setAdminFilter] = useState<string>("All Admins");
   const [statusFilter, setStatusFilter] = useState<string>("All Status");
-  const [dateFilter, setDateFilter] = useState<string>("This Week");
+  const [dateFilter, setDateFilter] = useState<string>("All Time");
   const [pageSize, setPageSize] = useState<string>("10 per page");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [sortAsc, setSortAsc] = useState<boolean>(false);
+
+  const {
+    auditLogs,
+    auditLogsLoading,
+    auditLogStats,
+    auditLogStatsLoading,
+    auditLogsTotal,
+    auditLogsTotalPages,
+    auditLogsPage,
+    auditLogError,
+    getAuditLogs,
+    getAuditLogStats,
+  } = useAdminStore();
+
+  const pageSizeNumber = Number(pageSize.split(" ")[0]) || 10;
 
   const hasActiveFilters =
     search !== "" ||
     actionFilter !== "All Actions" ||
     adminFilter !== "All Admins" ||
-    statusFilter !== "All Status";
+    statusFilter !== "All Status" ||
+    dateFilter !== "All Time";
 
   const handleClearFilters = () => {
     setSearch("");
     setActionFilter("All Actions");
     setAdminFilter("All Admins");
     setStatusFilter("All Status");
+    setDateFilter("All Time");
   };
 
+  const buildFilters = (): AuditLogFilters => {
+    const filters: AuditLogFilters = {};
+
+    if (search.trim()) {
+      filters.search = search.trim();
+    }
+
+    if (actionFilter !== "All Actions") {
+      filters.action = actionFilter;
+    }
+
+    if (statusFilter !== "All Status") {
+      filters.status = statusFilter === "Failed" ? "FAILED" : "SUCCESS";
+    }
+
+    if (dateFilter === "Today") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      filters.startDate = today.toISOString();
+      filters.endDate = new Date().toISOString();
+    } else if (dateFilter === "This Week") {
+      const date = new Date();
+      date.setDate(date.getDate() - 7);
+      filters.startDate = date.toISOString();
+      filters.endDate = new Date().toISOString();
+    } else if (dateFilter === "This Month") {
+      const date = new Date();
+      date.setMonth(date.getMonth() - 1);
+      filters.startDate = date.toISOString();
+      filters.endDate = new Date().toISOString();
+    }
+
+    return filters;
+  };
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void getAuditLogs(currentPage, pageSizeNumber, buildFilters());
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [actionFilter, adminFilter, currentPage, dateFilter, getAuditLogs, pageSizeNumber, search, statusFilter]);
+
+  useEffect(() => {
+    void getAuditLogStats();
+  }, [getAuditLogStats]);
+
+  useEffect(() => {
+    if (auditLogsTotalPages > 0 && currentPage > auditLogsTotalPages) {
+      setCurrentPage(auditLogsTotalPages);
+    }
+  }, [auditLogsTotalPages, currentPage]);
+
   const filteredLogs = useMemo(() => {
-    let rows = LOGS.filter((log) => {
+    let rows = auditLogs.map(mapLogToViewModel);
+
+    if (search.trim()) {
       const q = search.toLowerCase();
-      const matchesSearch =
-        q === "" ||
-        log.admin.name.toLowerCase().includes(q) ||
-        log.admin.subtitle.toLowerCase().includes(q) ||
-        log.action.toLowerCase().includes(q);
-      const matchesAction = actionFilter === "All Actions" || log.action === actionFilter;
-      const matchesAdmin = adminFilter === "All Admins" || log.admin.name === adminFilter;
-      const matchesStatus = statusFilter === "All Status" || log.status === statusFilter;
-      return matchesSearch && matchesAction && matchesAdmin && matchesStatus;
+      rows = rows.filter((log) => {
+        return (
+          log.admin.name.toLowerCase().includes(q) ||
+          log.admin.subtitle.toLowerCase().includes(q) ||
+          log.action.toLowerCase().includes(q) ||
+          log.target.toLowerCase().includes(q)
+        );
+      });
+    }
+
+    if (adminFilter !== "All Admins") {
+      rows = rows.filter((log) => {
+        const normalizedAdmin = log.admin.name.toLowerCase();
+        return normalizedAdmin.includes(adminFilter.toLowerCase());
+      });
+    }
+
+    rows = [...rows].sort((a, b) => {
+      const timeA = a.time;
+      const timeB = b.time;
+      return sortAsc ? timeA.localeCompare(timeB) : timeB.localeCompare(timeA);
     });
 
-    rows = [...rows].sort((a, b) =>
-      sortAsc ? a.time.localeCompare(b.time) : b.time.localeCompare(a.time)
-    );
-
     return rows;
-  }, [search, actionFilter, adminFilter, statusFilter, sortAsc]);
+  }, [actionFilter, adminFilter, auditLogs, search, sortAsc]);
 
-  const metrics: MetricCardProps[] = [
-    {
-      icon: <FileText className="w-5 h-5 text-purple-500" />,
-      iconBg: "bg-purple-50",
-      label: "Total Logs",
-      value: "2,354",
-      trend: "12.5% vs last month",
-      trendDirection: "up",
-    },
-    {
-      icon: <CalendarCheck className="w-5 h-5 text-emerald-500" />,
-      iconBg: "bg-emerald-50",
-      label: "Logs Today",
-      value: "148",
-      trend: "8.2% vs yesterday",
-      trendDirection: "up",
-    },
-    {
-      icon: <ShieldAlert className="w-5 h-5 text-red-500" />,
-      iconBg: "bg-red-50",
-      label: "Failed Actions",
-      value: "6",
-      trend: "14.3% vs yesterday",
-      trendDirection: "down",
-    },
-    {
-      icon: <User className="w-5 h-5 text-blue-500" />,
-      iconBg: "bg-blue-50",
-      label: "User Actions",
-      value: "1,842",
-      trend: "15.7% vs last month",
-      trendDirection: "up",
-    },
-    {
-      icon: <MessageSquare className="w-5 h-5 text-orange-500" />,
-      iconBg: "bg-orange-50",
-      label: "Message Actions",
-      value: "362",
-      trend: "6.1% vs last month",
-      trendDirection: "up",
-    },
-    {
-      icon: <Video className="w-5 h-5 text-violet-600" />,
-      iconBg: "bg-violet-50",
-      label: "Video Call Actions",
-      value: "150",
-      trend: "9.8% vs last month",
-      trendDirection: "up",
-    },
-  ];
+  const metrics = useMemo(() => {
+    const stats = auditLogStats;
+    return [
+      {
+        icon: <FileText className="w-5 h-5 text-purple-500" />,
+        iconBg: "bg-purple-50",
+        label: "Total Logs",
+        value: stats ? stats.totalLogs.toLocaleString() : auditLogStatsLoading ? "…" : "0",
+        trend: "Live from backend",
+        trendDirection: "up" as const,
+      },
+      {
+        icon: <CalendarCheck className="w-5 h-5 text-emerald-500" />,
+        iconBg: "bg-emerald-50",
+        label: "Logs Today",
+        value: stats ? stats.logsToday.toLocaleString() : auditLogStatsLoading ? "…" : "0",
+        trend: "Updated in real time",
+        trendDirection: "up" as const,
+      },
+      {
+        icon: <ShieldAlert className="w-5 h-5 text-red-500" />,
+        iconBg: "bg-red-50",
+        label: "Failed Actions",
+        value: stats ? stats.failedActions.toLocaleString() : auditLogStatsLoading ? "…" : "0",
+        trend: "Failed operations",
+        trendDirection: "down" as const,
+      },
+      {
+        icon: <User className="w-5 h-5 text-blue-500" />,
+        iconBg: "bg-blue-50",
+        label: "User Actions",
+        value: stats ? stats.userActions.toLocaleString() : auditLogStatsLoading ? "…" : "0",
+        trend: "User module logs",
+        trendDirection: "up" as const,
+      },
+      {
+        icon: <MessageSquare className="w-5 h-5 text-orange-500" />,
+        iconBg: "bg-orange-50",
+        label: "Admin Actions",
+        value: stats ? stats.adminActions.toLocaleString() : auditLogStatsLoading ? "…" : "0",
+        trend: "Admin module logs",
+        trendDirection: "up" as const,
+      },
+      {
+        icon: <Video className="w-5 h-5 text-violet-600" />,
+        iconBg: "bg-violet-50",
+        label: "Authentication Actions",
+        value: stats ? stats.authenticationActions.toLocaleString() : auditLogStatsLoading ? "…" : "0",
+        trend: "Auth activity",
+        trendDirection: "up" as const,
+      },
+    ];
+  }, [auditLogStats, auditLogStatsLoading]);
 
   return (
     <div className="min-h-screen p-0">
-      <div className="max-w-[1400px] mx-auto flex flex-col gap-6">
-        {/* Header */}
+      <div className="max-w-350 mx-auto flex flex-col gap-6">
         <div className="flex items-start justify-between border-b border-border pb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Audit Logs</h1>
@@ -413,9 +433,15 @@ const AuditLogs: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground tabular-nums">16:22:29</span>
+            <span className="text-sm font-medium text-muted-foreground tabular-nums">
+              {new Date().toLocaleTimeString("en-US")}
+            </span>
             <button
               type="button"
+              onClick={() => {
+                void getAuditLogStats();
+                void getAuditLogs(currentPage, pageSizeNumber, buildFilters());
+              }}
               className="w-9 h-9 rounded-xl bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Refresh"
             >
@@ -424,92 +450,96 @@ const AuditLogs: React.FC = () => {
           </div>
         </div>
 
-        {/* Metric cards */}
+        {auditLogError ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {auditLogError}
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {metrics.map((m) => (
             <MetricCard key={m.label} {...m} />
           ))}
         </div>
 
-        {/* Filters bar */}
         <div className="bg-card rounded-2xl shadow-sm border border-border p-4 space-y-4">
-  {/* Search */}
-  <div className="relative w-full">
-    <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-    <input
-      type="text"
-      value={search}
-      onChange={(e) => {
-        setSearch(e.target.value);
-        setCurrentPage(1);
-      }}
-      placeholder="Search by admin, username, action..."
-      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-card"
-    />
-  </div>
+          <div className="relative w-full">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search by admin, username, action..."
+              className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-border bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-card"
+            />
+          </div>
 
-  {/* Filters */}
-  <div className="flex flex-wrap items-center gap-3">
-    <FilterSelect
-      label="Action"
-      value={actionFilter}
-      options={ACTION_OPTIONS}
-      onChange={(v) => {
-        setActionFilter(v);
-        setCurrentPage(1);
-      }}
-    />
+          <div className="flex flex-wrap items-center gap-3">
+            <FilterSelect
+              label="Action"
+              value={actionFilter}
+              options={ACTION_OPTIONS}
+              onChange={(v) => {
+                setActionFilter(v);
+                setCurrentPage(1);
+              }}
+            />
 
-    <FilterSelect
-      label="Admin"
-      value={adminFilter}
-      options={ADMIN_OPTIONS}
-      onChange={(v) => {
-        setAdminFilter(v);
-        setCurrentPage(1);
-      }}
-    />
+            <FilterSelect
+              label="Admin"
+              value={adminFilter}
+              options={ADMIN_OPTIONS}
+              onChange={(v) => {
+                setAdminFilter(v);
+                setCurrentPage(1);
+              }}
+            />
 
-    <FilterSelect
-      label="Status"
-      value={statusFilter}
-      options={STATUS_OPTIONS}
-      onChange={(v) => {
-        setStatusFilter(v);
-        setCurrentPage(1);
-      }}
-    />
+            <FilterSelect
+              label="Status"
+              value={statusFilter}
+              options={STATUS_OPTIONS}
+              onChange={(v) => {
+                setStatusFilter(v);
+                setCurrentPage(1);
+              }}
+            />
 
-    <FilterSelect
-      label="Date"
-      value={dateFilter}
-      options={DATE_OPTIONS}
-      onChange={setDateFilter}
-      icon={<Calendar className="w-3.5 h-3.5 text-muted-foreground" />}
-    />
+            <FilterSelect
+              label="Date"
+              value={dateFilter}
+              options={DATE_OPTIONS}
+              onChange={(v) => {
+                setDateFilter(v);
+                setCurrentPage(1);
+              }}
+              icon={<Calendar className="w-3.5 h-3.5 text-muted-foreground" />}
+            />
 
-    <div className="ml-auto flex gap-3">
-      <button
-        type="button"
-        onClick={handleClearFilters}
-        disabled={!hasActiveFilters}
-        className="px-4 py-2.5 text-sm font-medium rounded-xl border border-border text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-      >
-        Clear Filters
-      </button>
+            <div className="ml-auto flex gap-3">
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                disabled={!hasActiveFilters}
+                className="px-4 py-2.5 text-sm font-medium rounded-xl border border-border text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Clear Filters
+              </button>
 
-      <button
-        type="button"
-        className="px-4 py-2.5 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5"
-      >
-        <Download className="w-4 h-4" />
-        Export
-      </button>
-    </div>
-  </div>
-</div>
+              <button
+                type="button"
+                className="px-4 py-2.5 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </button>
+            </div>
+          </div>
+        </div>
 
-        {/* Table card */}
         <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -534,36 +564,42 @@ const AuditLogs: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredLogs.map((log) => (
-                  <tr key={log.id} className="border-t border-border hover:bg-muted/60 transition-colors">
-                    <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{log.time}</td>
-                    <td className="px-5 py-3">
-                      <AdminCell admin={log.admin} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <ActionBadge action={log.action} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <TargetCell target={log.target} targetType={log.targetType} />
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{log.details}</td>
-                    <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{log.ipAddress}</td>
-                    <td className="px-5 py-3">
-                      <StatusPill status={log.status} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <button
-                        type="button"
-                        aria-label={`View log ${log.id}`}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-purple-500 bg-purple-50 hover:bg-purple-100 transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
+                {auditLogsLoading ? (
+                  <tr>
+                    <td colSpan={8} className="px-5 py-10 text-center text-muted-foreground">
+                      Loading audit logs...
                     </td>
                   </tr>
-                ))}
-
-                {filteredLogs.length === 0 && (
+                ) : filteredLogs.length > 0 ? (
+                  filteredLogs.map((log) => (
+                    <tr key={log.id} className="border-t border-border hover:bg-muted/60 transition-colors">
+                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{log.time}</td>
+                      <td className="px-5 py-3">
+                        <AdminCell admin={log.admin} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <ActionBadge action={log.action} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <TargetCell target={log.target} targetType={log.targetType} />
+                      </td>
+                      <td className="px-5 py-3 text-muted-foreground max-w-[220px] truncate">{log.details}</td>
+                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{log.ipAddress}</td>
+                      <td className="px-5 py-3">
+                        <StatusPill status={log.status} />
+                      </td>
+                      <td className="px-5 py-3">
+                        <button
+                          type="button"
+                          aria-label={`View log ${log.id}`}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-purple-500 bg-purple-50 hover:bg-purple-100 transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
                   <tr>
                     <td colSpan={8} className="px-5 py-10 text-center text-muted-foreground">
                       No logs match your filters.
@@ -574,7 +610,6 @@ const AuditLogs: React.FC = () => {
             </table>
           </div>
 
-          {/* Pagination */}
           <div className="flex items-center justify-between px-5 py-4 border-t border-border">
             <div className="flex items-center gap-1.5">
               <PageArrow
@@ -595,28 +630,31 @@ const AuditLogs: React.FC = () => {
               ))}
               <span className="px-1 text-muted-foreground">…</span>
               <button
-                onClick={() => setCurrentPage(TOTAL_PAGES)}
+                onClick={() => setCurrentPage(auditLogsTotalPages || 1)}
                 className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                  currentPage === TOTAL_PAGES ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                  currentPage === (auditLogsTotalPages || 1) ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                {TOTAL_PAGES}
+                {auditLogsTotalPages || 1}
               </button>
               <PageArrow
                 icon={<ChevronRight className="w-4 h-4" />}
-                disabled={currentPage === TOTAL_PAGES}
-                onClick={() => setCurrentPage((p) => Math.min(TOTAL_PAGES, p + 1))}
+                disabled={currentPage === (auditLogsTotalPages || 1)}
+                onClick={() => setCurrentPage((p) => Math.min(auditLogsTotalPages || 1, p + 1))}
               />
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
-                Showing 1 to {filteredLogs.length} of {TOTAL_LOGS.toLocaleString()} logs
+                Showing {auditLogs.length > 0 ? 1 : 0} to {auditLogs.length} of {auditLogsTotal.toLocaleString()} logs
               </span>
               <FilterSelect
                 label=""
                 value={pageSize}
                 options={["10 per page", "25 per page", "50 per page"]}
-                onChange={setPageSize}
+                onChange={(value) => {
+                  setPageSize(value);
+                  setCurrentPage(1);
+                }}
                 compact
               />
             </div>

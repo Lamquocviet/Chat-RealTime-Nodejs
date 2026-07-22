@@ -2,7 +2,7 @@ import { toast } from "sonner";
 import { persist } from "zustand/middleware";
 import { create } from "zustand";
 import { adminService } from "@/services/adminService";
-import type { AdminState } from "@/types/admin";
+import type { AdminState, AuditLogFilters } from "@/types/admin";
 
 export const useAdminStore = create<AdminState>()(
   persist(
@@ -14,12 +14,20 @@ export const useAdminStore = create<AdminState>()(
       summary: null,
       distribution: [],
       newUsersChart: [],
+      auditLogs: [],
+      auditLogsPage: 1,
+      auditLogsTotal: 0,
+      auditLogsTotalPages: 0,
+      auditLogStats: null,
 
       statsLoading: false,
       loading: false,
       actionLoading: false,
+      auditLogsLoading: false,
+      auditLogStatsLoading: false,
       error: null,
-      // Fetch all users
+      auditLogError: null,
+
       getAllUser: async (page = 1, limit = 20) => {
         try {
           set({ loading: true, error: null });
@@ -29,18 +37,16 @@ export const useAdminStore = create<AdminState>()(
             page: res.page ?? page,
             total: res.total ?? 0,
             totalPages: res.totalPages ?? 0,
-            loading: false,
           });
         } catch (error: any) {
-          const errorMessage =
-            error.response?.data?.message ?? "Cannot load users";
-          set({ error: errorMessage, loading: false });
+          const errorMessage = error.response?.data?.message ?? "Cannot load users";
+          set({ error: errorMessage });
           toast.error(errorMessage);
         } finally {
           set({ loading: false });
         }
       },
-      // Delete user
+
       deleteUser: async (userId) => {
         try {
           set({ actionLoading: true });
@@ -60,7 +66,6 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      // Promote
       promoteUser: async (userId) => {
         try {
           set({ actionLoading: true });
@@ -86,8 +91,6 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      // ===========================
-      // Demote
       demoteUser: async (userId) => {
         try {
           set({ actionLoading: true });
@@ -113,7 +116,6 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      // Block
       blockUser: async (userId) => {
         try {
           set({ actionLoading: true });
@@ -139,8 +141,6 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      // Activate
-
       activeUser: async (userId) => {
         try {
           set({ actionLoading: true });
@@ -162,15 +162,13 @@ export const useAdminStore = create<AdminState>()(
         } catch (error: any) {
           toast.error(error.response?.data?.message ?? "Activate failed");
         } finally {
-          set({ loading: false });
+          set({ actionLoading: false });
         }
       },
-      //stats
+
       getUserStats: async () => {
         try {
-          set({
-            statsLoading: true,
-          });
+          set({ statsLoading: true });
 
           const res = await adminService.getUserStats();
 
@@ -180,16 +178,46 @@ export const useAdminStore = create<AdminState>()(
             newUsersChart: res.newUsersChart,
           });
         } catch (error: any) {
-          toast.error(
-            error.response?.data?.message ?? "Cannot load statistics",
-          );
+          toast.error(error.response?.data?.message ?? "Cannot load statistics");
         } finally {
-          set({
-            statsLoading: false,
-          });
+          set({ statsLoading: false });
         }
       },
-      clearError: () => set({ error: null }),
+
+      getAuditLogs: async (page = 1, limit = 20, filters: AuditLogFilters = {}) => {
+        try {
+          set({ auditLogsLoading: true, auditLogError: null });
+          const res = await adminService.getAuditLogs(page, limit, filters);
+          set({
+            auditLogs: res.logs ?? [],
+            auditLogsPage: res.page ?? page,
+            auditLogsTotal: res.total ?? 0,
+            auditLogsTotalPages: res.totalPages ?? 0,
+          });
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.message ?? "Cannot load audit logs";
+          set({ auditLogError: errorMessage });
+          toast.error(errorMessage);
+        } finally {
+          set({ auditLogsLoading: false });
+        }
+      },
+
+      getAuditLogStats: async () => {
+        try {
+          set({ auditLogStatsLoading: true, auditLogError: null });
+          const res = await adminService.getAuditLogStats();
+          set({ auditLogStats: res.stats ?? null });
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.message ?? "Cannot load audit log statistics";
+          set({ auditLogError: errorMessage });
+          toast.error(errorMessage);
+        } finally {
+          set({ auditLogStatsLoading: false });
+        }
+      },
+
+      clearError: () => set({ error: null, auditLogError: null }),
     }),
     {
       name: "admin-storage",

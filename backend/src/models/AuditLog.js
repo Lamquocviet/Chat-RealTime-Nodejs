@@ -2,9 +2,7 @@ import mongoose from "mongoose";
 
 const auditLogSchema = new mongoose.Schema(
   {
-    // ============================
     // Người thực hiện
-    // ============================
     actor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -24,26 +22,14 @@ const auditLogSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-
-    // ============================
     // Module
-    // ============================
     module: {
       type: String,
-      enum: [
-        "AUTH",
-        "USER",
-        "ADMIN",
-        "REPORT",
-        "SYSTEM",
-      ],
+      enum: ["AUTH", "USER", "ADMIN", "REPORT", "SYSTEM"],
       required: true,
       index: true,
     },
-
-    // ============================
     // Action
-    // ============================
     action: {
       type: String,
       required: true,
@@ -86,20 +72,10 @@ const auditLogSchema = new mongoose.Schema(
       index: true,
     },
 
-    // ============================
     // Đối tượng bị tác động
-    // ============================
     targetType: {
       type: String,
-      enum: [
-        "user",
-        "post",
-        "story",
-        "comment",
-        "group",
-        "report",
-        "system",
-      ],
+      enum: ["user", "post", "story", "comment", "group", "report", "system"],
       required: true,
       index: true,
     },
@@ -114,10 +90,7 @@ const auditLogSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-
-    // ============================
     // Request
-    // ============================
     requestMethod: {
       type: String,
       enum: ["GET", "POST", "PUT", "PATCH", "DELETE"],
@@ -125,9 +98,6 @@ const auditLogSchema = new mongoose.Schema(
 
     requestPath: String,
 
-    // ============================
-    // Kết quả
-    // ============================
     status: {
       type: String,
       enum: ["SUCCESS", "FAILED"],
@@ -137,12 +107,7 @@ const auditLogSchema = new mongoose.Schema(
 
     severity: {
       type: String,
-      enum: [
-        "INFO",
-        "WARNING",
-        "ERROR",
-        "CRITICAL",
-      ],
+      enum: ["INFO", "WARNING", "ERROR", "CRITICAL"],
       default: "INFO",
       index: true,
     },
@@ -156,9 +121,7 @@ const auditLogSchema = new mongoose.Schema(
       default: {},
     },
 
-    // ============================
     // Client
-    // ============================
     ipAddress: String,
 
     userAgent: String,
@@ -175,7 +138,7 @@ const auditLogSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 auditLogSchema.index({ createdAt: -1 });
 auditLogSchema.index({ module: 1, createdAt: -1 });
